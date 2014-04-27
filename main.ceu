@@ -67,8 +67,8 @@ with
             spawn Unit with
                 this.tex    = _TEX_YODA;
                 this.snd    = _SND_FOOTMAN;
-                this.life   =  15;
-                this.damage =   2;
+                this.life   =  50;
+                this.damage =  10;
                 this.speed  =  80;
                 this.rect.x = 150;
                 this.rect.y = 150;
@@ -78,23 +78,24 @@ with
             await FOREVER;
         with
             every SDL_DT do
-                loop u1, Unit* do
-                    loop u2, Unit* do
+                loop u1 in Unit* do         // TODO "u1 vs u2" and "u2 vs u1"
+                    loop u2 in Unit* do
                         if  u1 != u2
                         and _SDL_HasIntersection(&u1:rect,&u2:rect) then
                             emit u1:go_collide => u2;
+                            emit u2:go_collide => u1;
                         end
                     end
                 end
             end
         with
             var _SDL_MouseButtonEvent* but;
-            every but=SDL_MOUSEBUTTONDOWN do
+            every but in SDL_MOUSEBUTTONDOWN do
                 if but:button == _SDL_BUTTON_RIGHT then
                     if _SDL_Rect_vs_Mouse(&nest.rect,but) then
                         emit nest.go_build;
                     else
-                        loop u, Unit* do
+                        loop u in Unit* do
                             if u:selected? then
                                 var _SDL_Point pt;
                                     pt.x = (int) but:x - u:rect.w/2;
@@ -105,7 +106,7 @@ with
                     end
                 else/if but:button == _SDL_BUTTON_LEFT then
                     var bool go_group? = true;  // only if no unit click
-                    loop u, Unit* do
+                    loop u in Unit* do
                         if _SDL_Rect_vs_Mouse(&u:rect, but) then
                             go_group? = false;
                             u:selected? = not u:selected?;
@@ -120,8 +121,8 @@ with
             end
         with
             var _SDL_Rect* r;
-            every r=group.ok do
-                loop u, Unit* do
+            every r in group.ok do
+                loop u in Unit* do
                     u:selected? = _SDL_HasIntersection(&u:rect,r);
                 end
             end

@@ -12,7 +12,7 @@ do
             var int y = but1:y;
             par/or do
                 var _SDL_MouseMotionEvent* but2;
-                every but2=SDL_MOUSEMOTION do
+                every but2 in SDL_MOUSEMOTION do
                     if but2:x > x then
                         this.rect.x = x;
                         this.rect.w = but2:x - x;
@@ -30,7 +30,7 @@ do
                 end
             with
                 var _SDL_MouseButtonEvent* but2;
-                every but2=SDL_MOUSEBUTTONUP do
+                every but2 in SDL_MOUSEBUTTONUP do
                     if but2:button == _SDL_BUTTON_LEFT then
                         emit this.ok => &this.rect;
                         break;

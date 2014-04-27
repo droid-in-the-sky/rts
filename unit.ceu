@@ -42,7 +42,7 @@ do
         end
     with
         var int v;
-        every v=this.go_hit do
+        every v in this.go_hit do
             this.life = life - v;
             if life <= 0 then
                 break;
@@ -104,7 +104,7 @@ do
 
                 par do
                     var int dt;
-                    every dt = SDL_DT do
+                    every dt in SDL_DT do
                         pt_goto_old_x = this.rect.x;    // save as old position
                         pt_goto_old_y = this.rect.y;    // to avoid collision
 
@@ -136,7 +136,7 @@ do
                 with
                     // animate sprite frames
                     loop do
-                        loop i, 4 do
+                        loop i in 4 do
                             clip.x = clip.w*i;
                             await 200ms;      // TODO: consider speed
                         end

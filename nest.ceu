@@ -28,13 +28,13 @@ do
 
             if global:money >= this.cost then
                 global:money = global:money - this.cost;
-                loop i, tot_max do
+                loop i in tot_max do
                     tot_cur = tot_cur + 1;
                     await 200ms;
                 end
                 emit this.ok_built;
             else
-                loop i, 3 do
+                loop i in 3 do
                     this.clr.r = 255;
                     await 100ms;
                     this.clr.r = 100;
