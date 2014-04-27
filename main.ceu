@@ -90,15 +90,30 @@ with
         with
             var _SDL_MouseButtonEvent* but;
             every but=SDL_MOUSEBUTTONDOWN do
-                if but:button == _SDL_BUTTON_LEFT then
-                    var bool go? = true;
-                    loop u, Unit* do
-                        if _SDL_Rect_vs_Mouse(&u:rect,but) then
-                            go? = false;
-                            break;
+                if but:button == _SDL_BUTTON_RIGHT then
+                    if _SDL_Rect_vs_Mouse(&nest.rect,but) then
+                        emit nest.go_build;
+                    else
+                        loop u, Unit* do
+                            if u:selected? then
+                                var _SDL_Point pt;
+                                    pt.x = (int) but:x - u:rect.w/2;
+                                    pt.y = (int) but:y - u:rect.h/2;
+                                emit u:go_point => &pt;
+                            end
                         end
                     end
-                    if go? then
+                else/if but:button == _SDL_BUTTON_LEFT then
+                    var bool go_group? = true;  // only if no unit click
+                    loop u, Unit* do
+                        if _SDL_Rect_vs_Mouse(&u:rect, but) then
+                            go_group? = false;
+                            u:selected? = not u:selected?;
+                        else
+                            u:selected? = false;
+                        end
+                    end
+                    if go_group? then
                         emit group.go => but;
                     end
                 end
@@ -126,6 +141,43 @@ with
             end
         end
     end
+#define DEBUG
+#ifdef DEBUG
+with
+    var int fps = 0;                // previous FPS
+    loop do
+        var int c = 0;              // reset the current counter
+
+        // create a texture with the previous FPS
+/*
+        var char[5] str;
+        _sprintf(str, "%d", fps);
+        var _SDL_Texture* tex;
+        finalize
+            tex = _SDL_text2texture(_REN, _FONT_SMALL, str,
+                                    &_colors.white, null);
+        with
+            _SDL_DestroyTexture(tex);
+        end
+        var _SDL_Rect r;
+            r.x = 200;
+            r.y = 200;
+            r.w = 30;
+            r.h = 30;
+*/
+
+        par/or do
+            await 1s;
+        with
+            every SDL_REDRAW do
+                c = c + 1;
+                //_SDL_RenderCopy(_REN, tex, null, &r);
+            end
+        end
+        fps = c;
+        _printf("[FPS=%d]\n", fps);
+    end
+#endif
 with
     every SDL_REDRAW do
         _SDL_RenderPresent(_REN);

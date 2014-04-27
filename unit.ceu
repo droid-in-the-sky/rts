@@ -10,17 +10,13 @@ class Unit with
 
     event Unit*         go_collide;     // collided with "Unit"
     event int           go_hit;         // hitted with "int" damage
+    event _SDL_Point*   go_point;       // move to "_SDL_Point" (null stop)
 do
     _assert(this.tex    != null);
     _assert(this.snd    != null);
     _assert(this.life   != 0);
     _assert(this.damage != 0);
     _assert(this.speed  != 0);
-
-    event bool     pt_goto?;    // going to a point?
-    var _SDL_Point pt_goto;     // this is the point
-    var float      pt_goto_vx;
-    var float      pt_goto_vy;
 
     // standing frame
     var _SDL_Rect clip;
@@ -54,56 +50,64 @@ do
         end
         await 100ms;    // last breath
     with
-        var _SDL_MouseButtonEvent* but;
-        every but = SDL_MOUSEBUTTONDOWN do
-            if but:button == _SDL_BUTTON_LEFT then
-                if _SDL_Rect_vs_Mouse(&this.rect, but) then
-                    this.selected? = not this.selected?;
-                else
-                    this.selected? = false;
-                end
-            else    // _SDL_BUTTON_RIGHT
-                if this.selected? then
-                    pt_goto.x = (int) but:x - this.rect.w/2;
-                    pt_goto.y = (int) but:y - this.rect.h/2;
+        // move to "pt_goto" on "this.go_point"
 
-                    // calculate speed ratio "vx" vs "vy"
-                    var float dx = _abs(this.rect.x - pt_goto.x);
-                    var float dy = _abs(this.rect.y - pt_goto.y);
-                    if dx == 0 then
-                        pt_goto_vx = 0;
-                        pt_goto_vy = this.speed;
-                    else/if dy == 0 then
-                        pt_goto_vx = this.speed;
-                        pt_goto_vy = 0;
-                    else
-                        pt_goto_vx = this.speed / _sqrt(1 + _pow(dy/dx,2));
-                        pt_goto_vy = pt_goto_vx * (dy/dx);
-                    end
+        var bool       pt_goto? = false;
+        var _SDL_Point pt_goto;     // set on "go_point"
+        var float      pt_goto_vx;
+        var float      pt_goto_vy;
 
-                    emit pt_goto? => true;
-                end
-            end
-        end
-    with
-        // move to "pt_goto" when "emit pt_goto?=>true"
+        // use float on calculations (write back to "rect" on each "DT" cycle)
+        var float sx = this.rect.x;
+        var float sy = this.rect.y;
+
+        // fallback position on collisions
+        var int pt_goto_old_x = this.rect.x;
+        var int pt_goto_old_y = this.rect.y;
+
         loop do
             finalize with
                 clip.x = 0;     // always terminate on standing position
             end
             par/or do
-                var bool go? = await pt_goto? until not go?; // stop moving
+                var _SDL_Point* to = await go_point;
+                pt_goto? = (to != null);
+                if to != null then
+                    pt_goto := *to;
+                end
+                            // point is plain type
             with
-                var bool go? = await pt_goto? until go?;     // start moving
+                every this.go_collide do
+                    this.rect.x = pt_goto_old_x;
+                    this.rect.y = pt_goto_old_y;
+                    sx = pt_goto_old_x;
+                    sy = pt_goto_old_y;
+                end
+            with
+                if not pt_goto? then
+                    await FOREVER;
+                end
+
+                // calculate speed ratio "vx" vs "vy"
+                var float dx = _abs(this.rect.x - pt_goto.x);
+                var float dy = _abs(this.rect.y - pt_goto.y);
+                if dx == 0 then
+                    pt_goto_vx = 0;
+                    pt_goto_vy = this.speed;
+                else/if dy == 0 then
+                    pt_goto_vx = this.speed;
+                    pt_goto_vy = 0;
+                else
+                    pt_goto_vx = this.speed / _sqrt(1 + _pow(dy/dx,2));
+                    pt_goto_vy = pt_goto_vx * (dy/dx);
+                end
 
                 par do
-                    // use float on calculations (write back to "rect" on each 
-                    // "DT" cycle)
-                    var float sx = this.rect.x;
-                    var float sy = this.rect.y;
-
                     var int dt;
                     every dt = SDL_DT do
+                        pt_goto_old_x = this.rect.x;    // save as old position
+                        pt_goto_old_y = this.rect.y;    // to avoid collision
+
                         var float vx = pt_goto_vx;
                         if sx > pt_goto.x then
                             vx = -vx;
@@ -124,9 +128,9 @@ do
                         and (vy>0 and this.rect.y>=pt_goto.y or
                              vy<0 and this.rect.y<=pt_goto.y)
                         then
-                            this.rect.x = pt_goto.x;    // round to destination
-                            this.rect.y = pt_goto.y;    //   ""
-                            emit pt_goto? => false;     // destination reached
+                            this.rect.x = (int)pt_goto.x;    // round to destination
+                            this.rect.y = (int)pt_goto.y;    //   ""
+                            emit go_point => null;      // destination reached
                         end
                     end
                 with

@@ -3,6 +3,7 @@ class Nest with
     var _SDL_Color  clr;
     var int         cost;
 
+    event void      go_build;
     event void      ok_built;
 do
     clr.r = 50;
@@ -12,7 +13,7 @@ do
     rect.y = 200;
     rect.w = 100;
     rect.h = 100;
-    cost = 5;
+    cost = 50;
 
     var int tot_max = 25;   // bar max
     var int tot_cur = 0;    // bar ongoing
@@ -23,10 +24,7 @@ do
                 tot_cur = 0;
             end
 
-            var _SDL_MouseButtonEvent* but =
-                await SDL_MOUSEBUTTONDOWN
-                    until but:button==_SDL_BUTTON_RIGHT and
-                          _SDL_Rect_vs_Mouse(&this.rect,but);
+            await this.go_build;
 
             if global:money >= this.cost then
                 global:money = global:money - this.cost;
