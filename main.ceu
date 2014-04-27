@@ -1,0 +1,137 @@
+#include "c.ceu"            // standard C functions (e.g. assert)
+#include "sdl.ceu"          // basic functions (e.g. SDL_CreateWindow)
+#include "sdl-gfx.ceu"      // drawing primitives (e.g.  bezierRGBA)
+#include "sdl-colors.ceu"   // most commonly used colors (e.g. colors.white)
+
+input void SDL_QUIT;
+input int  SDL_DT;
+input void SDL_REDRAW;
+input _SDL_KeyEvent* SDL_KEYDOWN;
+
+input _SDL_MouseButtonEvent* SDL_MOUSEBUTTONDOWN;
+input _SDL_MouseButtonEvent* SDL_MOUSEBUTTONUP;
+input _SDL_MouseMotionEvent* SDL_MOUSEMOTION;
+
+var _SDL_Window* win;
+    finalize
+        win = _SDL_CreateWindow("War", 500, 400, 1280, 800,
+                                _SDL_WINDOW_SHOWN);
+    with
+        _SDL_DestroyWindow(win);
+    end
+
+native do
+    int REN_W, REN_H;
+    SDL_Renderer* REN = NULL;
+    SDL_Texture* TEX_STORMTROOPER = NULL;
+    SDL_Texture* TEX_YODA = NULL;
+end
+#include "ren.ceu"
+
+native do
+    Mix_Chunk* SND_FOOTMAN = NULL;
+end
+#include "snd.ceu"
+
+interface Global with
+    var int money;      // player money
+end
+var int money = 100;
+
+#include "nest.ceu"
+#include "unit.ceu"
+#include "group.ceu"
+
+par/or do
+    _SDL_SetRenderDrawColor(_REN, 100,100,100,255);
+    every SDL_REDRAW do
+        _boxRGBA(_REN, 0,0, _REN_W, _REN_H,
+                       0x00,0xAA,0x00,0xFF);
+    end
+with
+    var Group group;
+    var Nest  nest;
+    do
+        par do
+            spawn Unit with
+                this.tex    = _TEX_STORMTROOPER;
+                this.snd    = _SND_FOOTMAN;
+                this.life   =  10;
+                this.damage =   1;
+                this.speed  = 100;
+                this.rect.x =  10;
+                this.rect.y =  10;
+                this.rect.w =  32;
+                this.rect.h =  48;
+            end;
+            spawn Unit with
+                this.tex    = _TEX_YODA;
+                this.snd    = _SND_FOOTMAN;
+                this.life   =  15;
+                this.damage =   2;
+                this.speed  =  80;
+                this.rect.x = 150;
+                this.rect.y = 150;
+                this.rect.w =  32;
+                this.rect.h =  48;
+            end;
+            await FOREVER;
+        with
+            every SDL_DT do
+                loop u1, Unit* do
+                    loop u2, Unit* do
+                        if  u1 != u2
+                        and _SDL_HasIntersection(&u1:rect,&u2:rect) then
+                            emit u1:go_collide => u2;
+                        end
+                    end
+                end
+            end
+        with
+            var _SDL_MouseButtonEvent* but;
+            every but=SDL_MOUSEBUTTONDOWN do
+                if but:button == _SDL_BUTTON_LEFT then
+                    var bool go? = true;
+                    loop u, Unit* do
+                        if _SDL_Rect_vs_Mouse(&u:rect,but) then
+                            go? = false;
+                            break;
+                        end
+                    end
+                    if go? then
+                        emit group.go => but;
+                    end
+                end
+            end
+        with
+            var _SDL_Rect* r;
+            every r=group.ok do
+                loop u, Unit* do
+                    u:selected? = _SDL_HasIntersection(&u:rect,r);
+                end
+            end
+        with
+            every nest.ok_built do
+                spawn Unit with
+                    this.tex    = _TEX_STORMTROOPER;
+                    this.snd    = _SND_FOOTMAN;
+                    this.life   =  10;
+                    this.damage =   1;
+                    this.speed  = 100;
+                    this.rect.x =  10;
+                    this.rect.y =  10;
+                    this.rect.w =  32;
+                    this.rect.h =  48;
+                end;
+            end
+        end
+    end
+with
+    every SDL_REDRAW do
+        _SDL_RenderPresent(_REN);
+    end
+with
+    await SDL_QUIT;
+end
+
+escape 0;

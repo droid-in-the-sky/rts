@@ -1,0 +1,68 @@
+class Nest with
+    var _SDL_Rect   rect;
+    var _SDL_Color  clr;
+    var int         cost;
+
+    event void      ok_built;
+do
+    clr.r = 100;
+    clr.g = 200;
+    clr.b = 100;
+    rect.x = 400;
+    rect.y = 200;
+    rect.w = 50;
+    rect.h = 50;
+    cost = 5;
+
+    var int tot_max = 25;   // bar max
+    var int tot_cur = 0;    // bar ongoing
+
+    par/or do
+        loop do
+            finalize with
+                tot_cur = 0;
+            end
+
+            var _SDL_MouseButtonEvent* but =
+                await SDL_MOUSEBUTTONDOWN
+                    until but:button==_SDL_BUTTON_RIGHT and
+                          _SDL_Rect_vs_Mouse(&this.rect,but);
+
+            if global:money >= this.cost then
+                global:money = global:money - this.cost;
+                loop i, tot_max do
+                    tot_cur = tot_cur + 1;
+                    await 200ms;
+                end
+                emit this.ok_built;
+            else
+                loop i, 3 do
+                    this.clr.r = 255;
+                    await 100ms;
+                    this.clr.r = 100;
+                    await 100ms;
+                end
+            end
+        end
+    with
+        every SDL_REDRAW do
+            _SDL_SetRenderDrawColor(_REN, clr.r,clr.g,clr.b,255);
+            _SDL_RenderFillRect(_REN, &this.rect);
+
+            if tot_cur > 0 then
+                _SDL_SetRenderDrawColor(_REN, 200,200,0,255);
+                var _SDL_Rect r;
+                    r.x = this.rect.x + 9;
+                    r.y = this.rect.y + this.rect.h - 11;
+                    r.w = tot_max;
+                    r.h = 4;
+                _SDL_RenderDrawRect(_REN, &r);
+                    r.x = this.rect.x + 10;
+                    r.y = this.rect.y + this.rect.h - 10;
+                    r.w = tot_cur;
+                    r.h = 2;
+                _SDL_RenderFillRect(_REN, &r);
+            end
+        end
+    end
+end

@@ -1,0 +1,160 @@
+class Unit with
+    var  _SDL_Rect      rect;           // position (x,y) and dimension (w,h).
+    var _SDL_Texture*   tex = null;
+    var _Mix_Chunk*     snd = null;
+
+    var bool            selected? = 0;  // to receive commands from player
+    var int             life   = 0;     // dies when <= 0
+    var int             damage = 0;     // inflicts at most this damage
+    var int             speed  = 0;     // moving speed (px/sec)
+
+    event Unit*         go_collide;     // collided with "Unit"
+    event int           go_hit;         // hitted with "int" damage
+do
+    _assert(this.tex    != null);
+    _assert(this.snd    != null);
+    _assert(this.life   != 0);
+    _assert(this.damage != 0);
+    _assert(this.speed  != 0);
+
+    event bool     pt_goto?;    // going to a point?
+    var _SDL_Point pt_goto;     // this is the point
+    var float      pt_goto_vx;
+    var float      pt_goto_vy;
+
+    // standing frame
+    var _SDL_Rect clip;
+        clip.x = 0;
+        clip.y = 0;
+        clip.w = 32;
+        clip.h = 48;
+
+    par/or do
+        // hits the colliding opponent
+        // TODO: only one (possibly always the same)
+        loop do
+            var Unit* u = await this.go_collide;
+            var _SDL_Point pt;
+                pt.x = u:rect.x + u:rect.w/2;
+                pt.y = u:rect.x + u:rect.h/2;
+            _Mix_PlayChannel(-1, this.snd, 0);
+            emit u:go_hit => this.damage;
+
+            // "reaction time": avoids continuous hits
+            await (1000-this.speed)ms;
+                    // TODO: 1000
+        end
+    with
+        var int v;
+        every v=this.go_hit do
+            this.life = life - v;
+            if life <= 0 then
+                break;
+            end
+        end
+        await 100ms;    // last breath
+    with
+        var _SDL_MouseButtonEvent* but;
+        every but = SDL_MOUSEBUTTONDOWN do
+            if but:button == _SDL_BUTTON_LEFT then
+                if _SDL_Rect_vs_Mouse(&this.rect, but) then
+                    this.selected? = not this.selected?;
+                else
+                    this.selected? = false;
+                end
+            else    // _SDL_BUTTON_RIGHT
+                if this.selected? then
+                    pt_goto.x = (int) but:x - this.rect.w/2;
+                    pt_goto.y = (int) but:y - this.rect.h/2;
+
+                    // calculate speed ratio "vx" vs "vy"
+                    var float dx = _abs(this.rect.x - pt_goto.x);
+                    var float dy = _abs(this.rect.y - pt_goto.y);
+                    if dx == 0 then
+                        pt_goto_vx = 0;
+                        pt_goto_vy = this.speed;
+                    else/if dy == 0 then
+                        pt_goto_vx = this.speed;
+                        pt_goto_vy = 0;
+                    else
+                        pt_goto_vx = this.speed / _sqrt(1 + _pow(dy/dx,2));
+                        pt_goto_vy = pt_goto_vx * (dy/dx);
+                    end
+
+                    emit pt_goto? => true;
+                end
+            end
+        end
+    with
+        // move to "pt_goto" when "emit pt_goto?=>true"
+        loop do
+            finalize with
+                clip.x = 0;     // always terminate on standing position
+            end
+            par/or do
+                var bool go? = await pt_goto? until not go?; // stop moving
+            with
+                var bool go? = await pt_goto? until go?;     // start moving
+
+                par do
+                    // use float on calculations (write back to "rect" on each 
+                    // "DT" cycle)
+                    var float sx = this.rect.x;
+                    var float sy = this.rect.y;
+
+                    var int dt;
+                    every dt = SDL_DT do
+                        var float vx = pt_goto_vx;
+                        if sx > pt_goto.x then
+                            vx = -vx;
+                        end
+                        sx = sx + vx*dt/1000;
+
+                        var float vy = pt_goto_vy;
+                        if sy > pt_goto.y then
+                            vy = -vy;
+                        end
+                        sy = sy + vy*dt/1000;
+
+                        this.rect.x = sx;
+                        this.rect.y = sy;
+
+                        if  (vx>0 and this.rect.x>=pt_goto.x or
+                             vx<0 and this.rect.x<=pt_goto.x)
+                        and (vy>0 and this.rect.y>=pt_goto.y or
+                             vy<0 and this.rect.y<=pt_goto.y)
+                        then
+                            this.rect.x = pt_goto.x;    // round to destination
+                            this.rect.y = pt_goto.y;    //   ""
+                            emit pt_goto? => false;     // destination reached
+                        end
+                    end
+                with
+                    // animate sprite frames
+                    loop do
+                        loop i, 4 do
+                            clip.x = clip.w*i;
+                            await 200ms;      // TODO: consider speed
+                        end
+                    end
+                end
+            end
+        end
+    with
+        every SDL_REDRAW do
+            var int w2 = rect.w / 2;
+            var int h2 = rect.h / 2;
+            if this.selected? then
+                _filledCircleRGBA(_REN, rect.x+w2,rect.y+h2, h2,
+                                        0x88,0x88,0x88,0x88);
+            end
+/*
+            if pt_goto? then
+                _SDL_RenderDrawLine(_REN, rect.x+w2, rect.y+h2,
+                                          pt_goto.x+w2, pt_goto.y+h2);
+            end
+*/
+            _SDL_RenderCopy(_REN, this.tex, &clip, &this.rect);
+        end
+    end
+end

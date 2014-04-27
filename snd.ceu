@@ -1,0 +1,9 @@
+_Mix_OpenAudio(22050, _AUDIO_S16SYS, 2, 4096);
+    finalize with
+        _Mix_CloseAudio();            // TODO: slow
+    end
+
+_SND_FOOTMAN = _Mix_LoadWAV("snds/sword.wav");
+    finalize with
+        _Mix_FreeChunk(_SND_FOOTMAN);
+    end
