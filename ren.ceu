@@ -1,3 +1,10 @@
+native do
+    int REN_W, REN_H;
+    SDL_Renderer* REN = NULL;
+    SDL_Texture* TEX_STORMTROOPER = NULL;
+    SDL_Texture* TEX_YODA = NULL;
+end
+
 _SDL_GetWindowSize(win, &_REN_W, &_REN_H);
 
 _REN = _SDL_CreateRenderer(win, -1, 0);

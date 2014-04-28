@@ -77,6 +77,7 @@ native nohold _SDL_GL_BindTexture(),
 
 native nohold _SDL_Rect_vs_Mouse(),
               _SDL_Rect_vs_Point(),
+              _SDL_Rect2Point(),
               _SDL_Touch2Point();
 
 native do
@@ -91,6 +92,11 @@ native do
     SDL_Point* SDL_Touch2Point (SDL_Point* pt, SDL_TouchFingerEvent* e, int w, int h) {
         pt->x = e->x * w;
         pt->y = e->y * h;
+        return pt;
+    }
+
+    SDL_Point SDL_Rect2Point (SDL_Rect* r) {
+        SDL_Point pt = { r->x+r->w/2, r->y+r->h/2 };
         return pt;
     }
 end

@@ -1,0 +1,97 @@
+native do
+    enum {
+        VIS_NULL = 0,       // reserved
+        VIS_TEAM1,
+        VIS_TEAM2,
+        VIS_MAX             // reserved
+    };
+
+    char idVSid[VIS_MAX][VIS_MAX] = {
+        { 0, 0, 0 },    // [00] NULL
+        { 0, 0, 1 },    // [01] TEAM1
+        { 0, 1, 0 },    // [02] TEAM2
+    //   00 01 02 03 04 05 06 07 08 09 10 11 12
+    };
+end
+
+interface Visible with
+    var   int       id;         // type identifier (e.g. _VIS_YODA)
+    var   _SDL_Rect rect;       // position (x,y) and dimension (w,h)
+    var   int       speed;      // speed in px/s
+    var   int       life;       // dies when <= 0
+    event int       go_hit;     // hitted with "int" damage
+    event Visible*  go_collide; // collided with other "Visible"
+end
+
+class MoveVisible with
+    var   Visible*   vis = null;    // object to move
+    var   _SDL_Point to;            // destination
+    event void       ok;            // reached "to"
+do
+    _assert(this.vis != null);
+
+    // use float on calculations (write back to "rect" on each "DT" cycle)
+    var float sx = vis:rect.x;
+    var float sy = vis:rect.y;
+    var float vx;
+    var float vy;
+
+    // fallback position on collisions
+    var int old_x = vis:rect.x;
+    var int old_y = vis:rect.y;
+
+    // calculate speed ratio "vx" vs "vy"
+    var float dx = _abs(vis:rect.x - to.x);
+    var float dy = _abs(vis:rect.y - to.y);
+    if dx == 0 then
+        vx = 0;
+        vy = vis:speed;
+    else/if dy == 0 then
+        vx = vis:speed;
+        vy = 0;
+    else
+        vx = vis:speed / _sqrt(1 + _pow(dy/dx,2));
+        vy = vx * (dy/dx);
+    end
+
+    par/or do
+        every vis:go_collide do
+            vis:rect.x = old_x;
+            vis:rect.y = old_y;
+            sx = old_x;
+            sy = old_y;
+        end
+    with
+        var int dt;
+        every dt in SDL_DT do
+            old_x = vis:rect.x;    // save as old position
+            old_y = vis:rect.y;    // to avoid collision
+
+            var float vx_ = vx;
+            if sx > to.x then
+                vx_ = -vx_;
+            end
+            sx = sx + vx_*dt/1000;
+
+            var float vy_ = vy;
+            if sy > to.y then
+                vy_ = -vy_;
+            end
+            sy = sy + vy_*dt/1000;
+
+            vis:rect.x = sx;
+            vis:rect.y = sy;
+
+            if  (vx_>0 and vis:rect.x>=to.x or
+                 vx_<0 and vis:rect.x<=to.x)
+            and (vy_>0 and vis:rect.y>=to.y or
+                 vy_<0 and vis:rect.y<=to.y)
+            then
+                vis:rect.x = (int)to.x; // round to destination
+                vis:rect.y = (int)to.y; //   ""
+                break;                  // reached destination
+            end
+        end
+    end
+    emit this.ok;
+end
