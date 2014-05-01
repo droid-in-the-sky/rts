@@ -1,11 +1,13 @@
 class Melee with
     interface Visible;
         var int id    = 0;
+        var int team  = 0;
         var int speed = 0;
 
     var _SDL_Point to;
 do
     _assert(this.id     != 0);
+    _assert(this.team   != 0);
     _assert(this.speed  != 0);
 
     var Visible* me = &this;
@@ -14,15 +16,15 @@ do
         this.to  = to;
     end;
 
-    var bool hit? = false;
+    var bool hit?;
     par/or do
-        var Visible* vis = await this.go_collide;
-        hit? = (vis:id != this.id);
-        if hit? then
-            emit vis:go_hit => 10;    // TODO: damage
-        end
+        var Visible* oth = await this.go_collide
+                           until oth:team != this.team;
+        emit oth:go_hit => 10;    // TODO: damage
+        hit? = true;
     with
-        await move.ok;      // missed
+        await move.ok;      // missed, no one is there
+        hit? = false;
     end
 
     if hit? then
@@ -31,7 +33,7 @@ do
             await 100ms;
         with
             every SDL_REDRAW do
-                _filledCircleRGBA(_REN, rect.x,rect.y, rect.w/2,
+                _filledCircleRGBA(_REN, to.x,to.y,2,
                                         0xCC,0x00,0x00,0xFF);
             end
         end
@@ -41,6 +43,7 @@ end
 class Unit with
     interface Visible;
         var int id    = 0;
+        var int team  = 0;
         var int speed = 0;
 
     var _SDL_Texture*   tex = null;
@@ -49,6 +52,7 @@ class Unit with
     event _SDL_Point*   go_point;       // move to "_SDL_Point" (null stop)
 do
     _assert(this.id     != 0);
+    _assert(this.team   != 0);
     _assert(this.speed  != 0);
     _assert(this.tex    != null);
     _assert(this.life   != 0);
@@ -61,30 +65,12 @@ do
         clip.h = 48;
 
     pool Melee[1] melees;
+        // TODO: melee spawn final draw
 
     par/or do
-        // hits the colliding opponent
-        // TODO: only one (possibly always the same)
-        var Visible* vis;
-// TODO: iterate myself
-        every vis in this.go_collide do
-            if vis:id == this.id then
-                continue;
-            end
-
-            spawn Melee in melees with
-                this.id    = id;
-                this.speed = speed*2;
-                this.to    := _SDL_Rect2Point(&vis:rect);
-                           // point is plain type
-
-                this.rect.x = this.to.x - 2;
-                this.rect.y = this.to.y - 2;
-                this.rect.w = 5;
-                this.rect.h = 5;
-            end;
-        end
-    with
+        // MELEE HIT (go_hit):
+        // - take damage
+        // - TODO: ignores all but the first
         var int v;
         every v in this.go_hit do
             this.life = life - v;
@@ -94,6 +80,28 @@ do
         end
         await 100ms;    // last breath
     with
+        // VISIBLE COLLISION (go_collide):
+        // - spawn melee attack
+        // - TODO: ignores all but the first colliding org
+        loop do
+            var Visible* oth = await this.go_collide;
+            // TODO: track with "new" (if scope is bigger)
+            spawn Melee in global:all with
+                this.id    = id+1;      // _VIS_MELEEn
+                this.team  = team;      // same team
+                this.speed = speed*2;
+                this.to    := _SDL_Rect2Point(&oth:rect);
+                           // point is plain type
+
+                var _SDL_Point fr := _SDL_Rect2Point(&rect);
+                                  // point is plain type
+                this.rect := _SDL_Point2Rect(&fr, 1);
+                          // rect is plain type
+            end;
+            await 1s;   // TODO: depend on speed
+        end
+    with
+        // MOVEMENT (go_point) //
         var bool       go? = false;
         var _SDL_Point to;
         loop do

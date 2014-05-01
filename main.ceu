@@ -22,134 +22,106 @@ var _SDL_Window* win;
 
 interface Global with
     var int money;      // player money
+    pool Visible[] all;
 end
 var int money = 1000;
 
 #include "ren.ceu"
 #include "snd.ceu"
 #include "visible.ceu"
-#include "nest.ceu"
 #include "unit.ceu"
+#include "nest.ceu"
 #include "group.ceu"
 
+var  Ren_ini    _;
+var  Group      group;
+var  Nest       nest;
+pool Visible[]  all;
+var  Ren_end    _;
+
+// create two initial units
+spawn Unit in global:all with
+    this.id     = _VIS_UNIT1;
+    this.team   = 1;
+    this.tex    = _TEX_STORMTROOPER;
+    this.life   =  10;
+    this.speed  = 100;
+    this.rect.x =  10;
+    this.rect.y =  10;
+    this.rect.w =  32;
+    this.rect.h =  48;
+end;
+spawn Unit in global:all with
+    this.id     = _VIS_UNIT2;
+    this.team   = 2;
+    this.tex    = _TEX_YODA;
+    this.life   =  50;
+    this.speed  =  30;
+    this.rect.x = 150;
+    this.rect.y = 150;
+    this.rect.w =  32;
+    this.rect.h =  48;
+end;
+
 par/or do
-    _SDL_SetRenderDrawColor(_REN, 100,100,100,255);
-    every SDL_REDRAW do
-        _boxRGBA(_REN, 0,0, _REN_W, _REN_H,
-                       0x00,0xAA,0x00,0xFF);
+    // COLLISION DETECTION //
+    // check collisions among all units every frame
+    every SDL_DT do
+        // TODO: repeated collision (aXb and bXa)
+        // TODO: single vis collision (aXb not aXc)
+        loop (Visible*)vis1 in global:all do
+            loop (Visible*)vis2 in global:all do
+                if  vis1!=vis2 and _idVSid[vis1:id][vis2:id]
+                and _SDL_HasIntersection(&vis1:rect,&vis2:rect) then
+                    emit vis1:go_collide => vis2;
+                    emit vis2:go_collide => vis1;
+                end
+            end
+        end
     end
 with
-    var  Group  group;
-    var  Nest   nest;
-    pool Unit[] units;
-    do
-        par do
-            // create two initial units
-            spawn Unit in units with
-                this.id     = _VIS_TEAM1;
-                this.tex    = _TEX_STORMTROOPER;
-                this.life   =  10;
-                this.speed  = 100;
-                this.rect.x =  10;
-                this.rect.y =  10;
-                this.rect.w =  32;
-                this.rect.h =  48;
-            end;
-            spawn Unit in units with
-                this.id     = _VIS_TEAM2;
-                this.tex    = _TEX_YODA;
-                this.life   =  50;
-                this.speed  =  30;
-                this.rect.x = 150;
-                this.rect.y = 150;
-                this.rect.w =  32;
-                this.rect.h =  48;
-            end;
-            await FOREVER;
-        with
-            // check collisions among all units every frame
-            every SDL_DT do
-                loop (Unit*)u1 in units do   // TODO double collision
-                    loop (Unit*)u2 in units do
-                        if  u1 != u2
-                        and _SDL_HasIntersection(&u1:rect,&u2:rect) then
-                            emit u1:go_collide => u2;
-                            emit u2:go_collide => u1;
-                        end
+    // MOUSE BUTTON INPUT //
+    var _SDL_MouseButtonEvent* but;
+    every but in SDL_MOUSEBUTTONDOWN do
+
+        // right click: activate nest or move selected units
+        if but:button == _SDL_BUTTON_RIGHT then
+            // activate nest
+            if _SDL_Rect_vs_Mouse(&nest.rect,but) then
+                emit nest.go_build;
+
+            // move selected units
+            else
+                loop (Unit*)u in global:all do
+                    if u:selected? then
+                        var _SDL_Point pt;
+                            pt.x = (int) but:x - u:rect.w/2;
+                            pt.y = (int) but:y - u:rect.h/2;
+                        emit u:go_point => &pt;
                     end
                 end
             end
-        with
-            // mouse button handling
-            var _SDL_MouseButtonEvent* but;
-            every but in SDL_MOUSEBUTTONDOWN do
 
-                // right click: activate nest or move selected units
-                if but:button == _SDL_BUTTON_RIGHT then
-                    // activate nest
-                    if _SDL_Rect_vs_Mouse(&nest.rect,but) then
-                        emit nest.go_build;
+        // left click: select unit or start group region
+        else/if but:button == _SDL_BUTTON_LEFT then
 
-                    // move selected units
-                    else
-                        loop (Unit*)u in units do
-                            if u:selected? then
-                                var _SDL_Point pt;
-                                    pt.x = (int) but:x - u:rect.w/2;
-                                    pt.y = (int) but:y - u:rect.h/2;
-                                emit u:go_point => &pt;
-                            end
-                        end
-                    end
-
-                // left click: select unit or start group region
-                else/if but:button == _SDL_BUTTON_LEFT then
-
-                    // select unit
-                    var bool go_group? = true;
-                    loop (Unit*)u in units do
-                        if u:id != _VIS_TEAM1 then
-                            continue;               // skip enemies
-                        end
-                        if _SDL_Rect_vs_Mouse(&u:rect, but) then
-                            go_group? = false;      // found, no group region
-                            u:selected? = not u:selected?;
-                        else
-                            u:selected? = false;    // deselect all
-                        end
-                    end
-
-                    // start group region
-                    if go_group? then
-                        emit group.go => but;
-                    end
+            // select unit
+            var bool go_group? = true;
+            loop (Unit*)u in global:all do
+                if u:id != _VIS_UNIT1 then
+                    continue;               // skip enemies
+                end
+                if _SDL_Rect_vs_Mouse(&u:rect, but) then
+                    go_group? = false;      // found, no group region
+                    u:selected? = not u:selected?;
+                else
+                    u:selected? = false;    // deselect all
                 end
             end
-        with
-            // select all units under group region callback
-// TODO: move to nest with "spawn Unit in global:units"
-            var _SDL_Rect* r;
-            every r in group.ok do
-                loop (Unit*)u in units do
-                    if u:id == _VIS_TEAM1 then
-                        u:selected? = _SDL_HasIntersection(&u:rect,r);
-                    end
-                end
-            end
-        with
-// TODO: move to nest with "spawn Unit in global:units"
-            // spawn unit on nest callback
-            every nest.ok_built do
-                spawn Unit in units with
-                    this.id     = _VIS_TEAM1;
-                    this.tex    = _TEX_STORMTROOPER;
-                    this.life   =  10;
-                    this.speed  = 100;
-                    this.rect.x =  10;
-                    this.rect.y =  10;
-                    this.rect.w =  32;
-                    this.rect.h =  48;
-                end;
+
+            // start group region
+            if go_group? then
+                emit group.go => but;
             end
         end
     end
@@ -190,10 +162,6 @@ with
         _printf("[FPS=%d]\n", fps);
     end
 #endif
-with
-    every SDL_REDRAW do
-        _SDL_RenderPresent(_REN);
-    end
 with
     await SDL_QUIT;
 end

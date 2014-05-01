@@ -1,21 +1,26 @@
 native do
     enum {
-        VIS_NULL = 0,       // reserved
-        VIS_TEAM1,
-        VIS_TEAM2,
+        VIS_NULL    = 0,       // reserved
+        VIS_UNIT1   = 1,
+        VIS_MELEE1  = 2,
+        VIS_UNIT2   = 3,
+        VIS_MELEE2  = 4,
         VIS_MAX             // reserved
     };
 
     char idVSid[VIS_MAX][VIS_MAX] = {
-        { 0, 0, 0 },    // [00] NULL
-        { 0, 0, 1 },    // [01] TEAM1
-        { 0, 1, 0 },    // [02] TEAM2
+        { 0, 0, 0, 0, 0 },    // [00] NULL
+        { 0, 1, 0, 1, 1 },    // [01] UNIT1
+        { 0, 0, 1, 1, 1 },    // [02] MELEE1
+        { 0, 1, 1, 1, 0 },    // [03] UNIT2
+        { 0, 1, 1, 0, 1 },    // [04] MELEE2
     //   00 01 02 03 04 05 06 07 08 09 10 11 12
     };
 end
 
 interface Visible with
     var   int       id;         // type identifier (e.g. _VIS_YODA)
+    var   int       team;       // team identifier [1,2]
     var   _SDL_Rect rect;       // position (x,y) and dimension (w,h)
     var   int       speed;      // speed in px/s
     var   int       life;       // dies when <= 0

@@ -4,7 +4,6 @@ class Nest with
     var int         cost;
 
     event void      go_build;
-    event void      ok_built;
 do
     clr.r = 50;
     clr.g = 50;
@@ -19,6 +18,7 @@ do
     var int tot_cur = 0;    // bar ongoing
 
     par/or do
+        // spawn units on request
         loop do
             finalize with
                 tot_cur = 0;
@@ -32,7 +32,19 @@ do
                     tot_cur = tot_cur + 1;
                     await 200ms;
                 end
-                emit this.ok_built;
+
+                // SPAWN UNIT
+                spawn Unit in global:all with
+                    this.id     = _VIS_UNIT1;
+                    this.team   = 1;
+                    this.tex    = _TEX_STORMTROOPER;
+                    this.life   =  10;
+                    this.speed  = 100;
+                    this.rect.x =  10;
+                    this.rect.y =  10;
+                    this.rect.w =  32;
+                    this.rect.h =  48;
+                end;
             else
                 loop i in 3 do
                     this.clr.r = 255;
@@ -55,10 +67,7 @@ do
                     r.w = tot_max;
                     r.h = 4;
                 _SDL_RenderDrawRect(_REN, &r);
-                    r.x = this.rect.x + 10;
-                    r.y = this.rect.y + this.rect.h - 10;
                     r.w = tot_cur;
-                    r.h = 2;
                 _SDL_RenderFillRect(_REN, &r);
             end
         end

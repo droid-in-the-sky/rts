@@ -1,12 +1,11 @@
 class Group with
-    var   _SDL_Rect   rect;
     event _SDL_MouseButtonEvent* go;
-    event _SDL_Rect*  ok;
 do
     loop do
         var _SDL_MouseButtonEvent* but1 = await go;
-        this.rect.w = 0;
-        this.rect.h = 0;
+        var _SDL_Rect rect;
+            rect.w = 0;
+            rect.h = 0;
         par/or do
             var int x = but1:x;
             var int y = but1:y;
@@ -14,25 +13,30 @@ do
                 var _SDL_MouseMotionEvent* but2;
                 every but2 in SDL_MOUSEMOTION do
                     if but2:x > x then
-                        this.rect.x = x;
-                        this.rect.w = but2:x - x;
+                        rect.x = x;
+                        rect.w = but2:x - x;
                     else
-                        this.rect.x = (int)but2:x;
-                        this.rect.w = x - but2:x;
+                        rect.x = (int)but2:x;
+                        rect.w = x - but2:x;
                     end
                     if but2:y > y then
-                        this.rect.y = y;
-                        this.rect.h = but2:y - y;
+                        rect.y = y;
+                        rect.h = but2:y - y;
                     else
-                        this.rect.y = (int)but2:y;
-                        this.rect.h = y - but2:y;
+                        rect.y = (int)but2:y;
+                        rect.h = y - but2:y;
                     end
                 end
             with
                 var _SDL_MouseButtonEvent* but2;
                 every but2 in SDL_MOUSEBUTTONUP do
                     if but2:button == _SDL_BUTTON_LEFT then
-                        emit this.ok => &this.rect;
+                        // select all units in the selected region
+                        loop (Unit*)u in global:all do
+                            if u:id == _VIS_UNIT1 then
+                                u:selected? = _SDL_HasIntersection(&u:rect,&rect);
+                            end
+                        end
                         break;
                     end
                 end
@@ -41,7 +45,7 @@ do
             await SDL_MOUSEMOTION;  // start drawing when has area
             every SDL_REDRAW do
                 _SDL_SetRenderDrawColor(_REN, 255,255,255,255);
-                _SDL_RenderDrawRect(_REN, &this.rect);
+                _SDL_RenderDrawRect(_REN, &rect);
             end
         end
     end

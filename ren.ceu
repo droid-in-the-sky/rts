@@ -21,3 +21,19 @@ _TEX_YODA = _IMG_LoadTexture(_REN, "imgs/yoda.png");
     finalize with
         _SDL_DestroyTexture(_TEX_YODA);
     end
+
+class Ren_ini with
+do
+    _SDL_SetRenderDrawColor(_REN, 100,100,100,255);
+    every SDL_REDRAW do
+        _boxRGBA(_REN, 0,0, _REN_W, _REN_H,
+                       0x00,0xAA,0x00,0xFF);
+    end
+end
+
+class Ren_end with
+do
+    every SDL_REDRAW do
+        _SDL_RenderPresent(_REN);
+    end
+end
