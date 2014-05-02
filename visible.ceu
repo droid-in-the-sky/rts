@@ -1,22 +1,20 @@
 native do
     enum {
-        VIS_NULL    = 0,       // reserved
-        VIS_UNIT1   = 1,
-        VIS_MELEE1  = 2,
-        VIS_UNIT2   = 3,
-        VIS_MELEE2  = 4,
+        VIS_NULL    = 0,    // reserved
+        VIS_UNIT    = 1,
+        VIS_FOG     = 2,
         VIS_MAX             // reserved
     };
 
     char idVSid[VIS_MAX][VIS_MAX] = {
-        { 0, 0, 0, 0, 0 },    // [00] NULL
-        { 0, 1, 0, 1, 1 },    // [01] UNIT1
-        { 0, 0, 1, 1, 1 },    // [02] MELEE1
-        { 0, 1, 1, 1, 0 },    // [03] UNIT2
-        { 0, 1, 1, 0, 1 },    // [04] MELEE2
+        { 0, 0, 0 },    // [00] NULL
+        { 0, 1, 0 },    // [01] UNIT
+        { 0, 0, 0 },    // [02] MELEE FOG
     //   00 01 02 03 04 05 06 07 08 09 10 11 12
     };
 end
+
+// Interface shared by all visible objects.
 
 interface Visible with
     var   int       id;         // type identifier (e.g. _VIS_YODA)
@@ -27,6 +25,10 @@ interface Visible with
     event int       go_hit;     // hitted with "int" damage
     event Visible*  go_collide; // collided with other "Visible"
 end
+
+// Moves a given "vis" object:
+//      - moves until it collides or reaches the destination
+//      - emits "ok" in either case
 
 class MoveVisible with
     var   Visible*   vis = null;    // object to move

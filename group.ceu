@@ -33,7 +33,8 @@ do
                     if but2:button == _SDL_BUTTON_LEFT then
                         // select all units in the selected region
                         loop (Unit*)u in global:all do
-                            if u:id == _VIS_UNIT1 then
+                            if  u:id   == _VIS_UNIT
+                            and u:team == 1 then
                                 u:selected? = _SDL_HasIntersection(&u:rect,&rect);
                             end
                         end

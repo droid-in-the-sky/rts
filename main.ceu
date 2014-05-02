@@ -41,10 +41,11 @@ var  Ren_end    _;
 
 // create two initial units
 spawn Unit in global:all with
-    this.id     = _VIS_UNIT1;
+    this.id     = _VIS_UNIT;
     this.team   = 1;
     this.tex    = _TEX_STORMTROOPER;
     this.life   =  10;
+    this.damage =   2;
     this.speed  = 100;
     this.rect.x =  10;
     this.rect.y =  10;
@@ -52,10 +53,11 @@ spawn Unit in global:all with
     this.rect.h =  48;
 end;
 spawn Unit in global:all with
-    this.id     = _VIS_UNIT2;
+    this.id     = _VIS_UNIT;
     this.team   = 2;
     this.tex    = _TEX_YODA;
     this.life   =  50;
+    this.damage =  10;
     this.speed  =  30;
     this.rect.x = 150;
     this.rect.y = 150;
@@ -108,7 +110,7 @@ with
             // select unit
             var bool go_group? = true;
             loop (Unit*)u in global:all do
-                if u:id != _VIS_UNIT1 then
+                if u:team != 1 then
                     continue;               // skip enemies
                 end
                 if _SDL_Rect_vs_Mouse(&u:rect, but) then

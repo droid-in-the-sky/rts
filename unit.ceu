@@ -1,61 +1,35 @@
-class Melee with
+class Fog with
     interface Visible;
-        var int id    = 0;
-        var int team  = 0;
+        var int id    = _VIS_FOG;
         var int speed = 0;
-
-    var _SDL_Point to;
 do
-    _assert(this.id     != 0);
-    _assert(this.team   != 0);
-    _assert(this.speed  != 0);
-
-    var Visible* me = &this;
-    var MoveVisible move with
-        this.vis = me;
-        this.to  = to;
-    end;
-
-    var bool hit?;
     par/or do
-        var Visible* oth = await this.go_collide
-                           until oth:team != this.team;
-        emit oth:go_hit => 10;    // TODO: damage
-        hit? = true;
+        await 100ms;
     with
-        await move.ok;      // missed, no one is there
-        hit? = false;
-    end
-
-    if hit? then
-        _Mix_PlayChannel(-1, _SND_SWORD, 0);
-        par/or do
-            await 100ms;
-        with
-            every SDL_REDRAW do
-                _filledCircleRGBA(_REN, to.x,to.y,2,
-                                        0xCC,0x00,0x00,0xFF);
-            end
+        var _SDL_Point pt := _SDL_Rect2Point(&this.rect);
+        every SDL_REDRAW do
+            _filledCircleRGBA(_REN, pt.x,pt.y,2,
+                                    0xCC,0x00,0x00,0xFF);
         end
     end
 end
 
 class Unit with
     interface Visible;
-        var int id    = 0;
+        var int id    = _VIS_UNIT;
         var int team  = 0;
         var int speed = 0;
 
+    var int             damage = 0;
     var _SDL_Texture*   tex = null;
-
     var bool            selected? = 0;  // to receive commands from player
     event _SDL_Point*   go_point;       // move to "_SDL_Point" (null stop)
 do
-    _assert(this.id     != 0);
     _assert(this.team   != 0);
     _assert(this.speed  != 0);
     _assert(this.tex    != null);
     _assert(this.life   != 0);
+    _assert(this.damage != 0);
 
     // standing frame
     var _SDL_Rect clip;
@@ -63,9 +37,6 @@ do
         clip.y = 0;
         clip.w = 32;
         clip.h = 48;
-
-    pool Melee[1] melees;
-        // TODO: melee spawn final draw
 
     par/or do
         // MELEE HIT (go_hit):
@@ -81,24 +52,19 @@ do
         await 100ms;    // last breath
     with
         // VISIBLE COLLISION (go_collide):
-        // - spawn melee attack
+        // - perform melee attack after a reaction/performing time
         // - TODO: ignores all but the first colliding org
         loop do
-            var Visible* oth = await this.go_collide;
-            // TODO: track with "new" (if scope is bigger)
-            spawn Melee in global:all with
-                this.id    = id+1;      // _VIS_MELEEn
-                this.team  = team;      // same team
-                this.speed = speed*2;
-                this.to    := _SDL_Rect2Point(&oth:rect);
-                           // point is plain type
-
-                var _SDL_Point fr := _SDL_Rect2Point(&rect);
-                                  // point is plain type
-                this.rect := _SDL_Point2Rect(&fr, 1);
-                          // rect is plain type
-            end;
-            await 1s;   // TODO: depend on speed
+            var Visible* oth = await this.go_collide
+                               until oth:team != this.team;
+            watching oth do
+                await 1s;   // TODO: depend on speed
+                _Mix_PlayChannel(-1, _SND_SWORD, 0);
+                spawn Fog in global:all with
+                    this.rect = rect;
+                end;
+                emit oth:go_hit => this.damage;
+            end
         end
     with
         // MOVEMENT (go_point) //
@@ -113,7 +79,6 @@ do
                 go? = (ptr != null);
                 if ptr != null then
                     to := *ptr;
-                       // point is plain type
                 end
             with
                 if not go? then
