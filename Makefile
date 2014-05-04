@@ -6,7 +6,7 @@
 
 all:
 	ceu main.ceu
-	gcc -Os main.c $(CFLAGS) -lm \
+	gcc -Os -g main.c $(CFLAGS) -lm \
 		-lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer -lSDL2_gfx \
 		-o war.exe
 

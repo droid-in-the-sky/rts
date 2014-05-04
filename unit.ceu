@@ -1,11 +1,20 @@
+interface IUnit with
+    interface IVisible;
+    var   int           range;      // sight range in px
+    var   int           life;       // dies when <= 0
+    var   int           damage;     // damage it inflicts to others
+    var   bool          selected?;  // to receive commands from player
+    event int           go_hit;     // hitted with "int" damage
+    event _SDL_Point*   go_point;   // move to "_SDL_Point" (null stop)
+    var   IVisible*     vis_range;
+end
+
 class Fog with
-    interface Visible;
+    interface IVisible;
         var int id    = _VIS_FOG;
         var int speed = 0;
 do
-    par/or do
-        await 100ms;
-    with
+    watching 100ms do
         var _SDL_Point pt := _SDL_Rect2Point(&this.rect);
         every SDL_REDRAW do
             _filledCircleRGBA(_REN, pt.x,pt.y,2,
@@ -14,22 +23,116 @@ do
     end
 end
 
-class Unit with
-    interface Visible;
-        var int id    = _VIS_UNIT;
+class Fire with
+    interface IVisible;
+        var int id    = _VIS_FIRE;
         var int team  = 0;
         var int speed = 0;
 
-    var int             damage = 0;
-    var _SDL_Texture*   tex = null;
-    var bool            selected? = 0;  // to receive commands from player
-    event _SDL_Point*   go_point;       // move to "_SDL_Point" (null stop)
+    var _SDL_Point to;
+    var int        damage;
+do
+    _assert(this.team   != 0);
+    _assert(this.speed  != 0);
+    _assert(this.damage != 0);
+
+    // move "this" to "to"
+    var IVisible* me = &this;
+    var MoveIVisible move with
+        this.vis = me;
+        this.to  = to;
+    end;
+
+    par/or do
+        await move.ok;
+    with
+        var IVisible* vis = await this.go_collide
+                            until vis:team != this.team;
+        var IUnit* oth = (IUnit*) vis;
+        _assert(oth != null);
+        emit oth:go_hit => this.damage;
+    with
+        every SDL_REDRAW do
+            var int w2 = rect.w / 2;
+            var int h2 = rect.h / 2;
+            _filledCircleRGBA(_REN, rect.x+w2,rect.y+h2, h2,
+                                    0xFF,0x00,0x00,0xFF);
+        end
+    end
+end
+
+class Range with
+    interface IVisible;
+        var int id    = _VIS_RANGE;
+        var int team  = 0;
+    var IUnit* unit = null;
+do
+    _assert(this.team != 0);
+    _assert(this.unit != null);
+    par do
+        loop do
+            var _SDL_Point pt := _SDL_Rect2Point(&this.unit:rect);
+            this.rect := _SDL_Point2Rect(&pt, this.unit:range);
+            await SDL_DT;
+        end
+    with
+        loop do
+            var IVisible* vis = await this.go_collide
+                                until vis:team != this.team;
+            var IUnit* oth = (IUnit*)vis;
+            if oth != null then
+                await 1s;   // TODO: depend on speed
+                var _SDL_Point pt := _SDL_Rect2Point(&this.rect);
+                var _SDL_Rect  fr := _SDL_Point2Rect(&pt, 2);
+                var _SDL_Point to := _SDL_Rect2Point(&oth:rect);
+                spawn Fire in global:all with
+                    this.id    = _VIS_FIRE;
+                    this.team  = team;
+                    this.speed = unit:speed * 3;
+                    this.rect  := fr;
+                    this.to    := to;
+                    this.damage = unit:damage;
+                end;
+            end
+        end
+    with
+        every SDL_REDRAW do
+            var int w2 = rect.w / 2;
+            var int h2 = rect.h / 2;
+            _filledCircleRGBA(_REN, rect.x+w2,rect.y+h2, h2,
+                                    0x00,0x00,0x00,0x10);
+        end
+    end
+end
+
+class Unit with
+    interface IUnit;
+        // IVisible
+        var int id    = _VIS_UNIT;
+        var int team  = 0;
+        var int speed = 0;
+        // IUnit
+        var int             range       = 0;
+        var int             damage      = 0;
+        var _SDL_Texture*   tex         = null;
+        var bool            selected?   = 0;
+        event _SDL_Point*   go_point;
+        var   IVisible*     vis_range   = null;
+
+    var _SDL_Texture* tex;
 do
     _assert(this.team   != 0);
     _assert(this.speed  != 0);
     _assert(this.tex    != null);
     _assert(this.life   != 0);
     _assert(this.damage != 0);
+
+    var IUnit* me = &this;
+    var Range vis_range_ with
+        this.team = team;
+        this.unit = me;
+    end;
+    this.vis_range = &vis_range_;
 
     // standing frame
     var _SDL_Rect clip;
@@ -39,7 +142,7 @@ do
         clip.h = 48;
 
     par/or do
-        // MELEE HIT (go_hit):
+        // HIT (go_hit):
         // - take damage
         // - TODO: ignores all but the first
         var int v;
@@ -55,15 +158,18 @@ do
         // - perform melee attack after a reaction/performing time
         // - TODO: ignores all but the first colliding org
         loop do
-            var Visible* oth = await this.go_collide
-                               until oth:team != this.team;
-            watching oth do
-                await 1s;   // TODO: depend on speed
-                _Mix_PlayChannel(-1, _SND_SWORD, 0);
-                spawn Fog in global:all with
-                    this.rect = rect;
-                end;
-                emit oth:go_hit => this.damage;
+            var IVisible* vis = await this.go_collide
+                                until vis:team != this.team;
+            var IUnit* oth = (IUnit*)vis;
+            if oth then
+                watching oth do
+                    await 500ms;   // TODO: depend on speed
+                    _Mix_PlayChannel(-1, _SND_SWORD, 0);
+                    spawn Fog in global:all with
+                        this.rect := oth:rect;
+                    end;
+                    emit oth:go_hit => this.damage;
+                end
             end
         end
     with
@@ -87,15 +193,13 @@ do
                 go? = false;    // not again
 
                 // move "this" to "*to"
-                var Unit* me = &this;
-                var MoveVisible move with
+                var IVisible* me = &this;
+                var MoveIVisible move with
                     this.vis = me;
-                    this.to  = to;  // TODO: := ??
+                    this.to  = to;
                 end;
                 // animate sprite frames while moving
-                par/or do
-                    await move.ok;
-                with
+                watching move.ok do
                     loop do
                         loop i in 4 do
                             clip.x = clip.w*i;
@@ -107,9 +211,9 @@ do
         end
     with
         every SDL_REDRAW do
-            var int w2 = rect.w / 2;
-            var int h2 = rect.h / 2;
             if this.selected? then
+                var int w2 = rect.w / 2;
+                var int h2 = rect.h / 2;
                 _filledCircleRGBA(_REN, rect.x+w2,rect.y+h2, h2,
                                         0x88,0x88,0x88,0x88);
             end

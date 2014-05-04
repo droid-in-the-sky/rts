@@ -37,10 +37,11 @@ do
                 spawn Unit in global:all with
                     this.id     = _VIS_UNIT;
                     this.team   = 1;
+                    this.speed  = 100;
                     this.tex    = _TEX_STORMTROOPER;
                     this.life   =  10;
                     this.damage =   2;
-                    this.speed  = 100;
+                    this.range  = 100;
                     this.rect.x =  10;
                     this.rect.y =  10;
                     this.rect.w =  32;

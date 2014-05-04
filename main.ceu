@@ -22,7 +22,7 @@ var _SDL_Window* win;
 
 interface Global with
     var int money;      // player money
-    pool Visible[] all;
+    pool IVisible[] all;
 end
 var int money = 1000;
 
@@ -36,17 +36,18 @@ var int money = 1000;
 var  Ren_ini    _;
 var  Group      group;
 var  Nest       nest;
-pool Visible[]  all;
+pool IVisible[]  all;
 var  Ren_end    _;
 
 // create two initial units
 spawn Unit in global:all with
     this.id     = _VIS_UNIT;
     this.team   = 1;
+    this.speed  = 100;
     this.tex    = _TEX_STORMTROOPER;
     this.life   =  10;
     this.damage =   2;
-    this.speed  = 100;
+    this.range  = 100;
     this.rect.x =  10;
     this.rect.y =  10;
     this.rect.w =  32;
@@ -55,10 +56,11 @@ end;
 spawn Unit in global:all with
     this.id     = _VIS_UNIT;
     this.team   = 2;
+    this.speed  =  30;
     this.tex    = _TEX_YODA;
     this.life   =  50;
     this.damage =  10;
-    this.speed  =  30;
+    this.range  = 0;
     this.rect.x = 150;
     this.rect.y = 150;
     this.rect.w =  32;
@@ -69,12 +71,34 @@ par/or do
     // COLLISION DETECTION //
     // check collisions among all units every frame
     every SDL_DT do
-        // TODO: repeated collision (aXb and bXa)
-        // TODO: single vis collision (aXb not aXc)
-        loop (Visible*)vis1 in global:all do
-            loop (Visible*)vis2 in global:all do
-                if  vis1!=vis2 and _idVSid[vis1:id][vis2:id]
-                and _SDL_HasIntersection(&vis1:rect,&vis2:rect) then
+        var IVisible*[100] objs;      // TODO: 100
+        var int          objs_n = 0;
+        loop (IVisible*)vis in global:all do
+            objs[objs_n] := vis;
+            objs_n = objs_n + 1;
+            var IUnit* u = (IUnit*) vis;
+            if u!=null and u:vis_range!=null then
+                objs[objs_n] := u:vis_range;
+                objs_n = objs_n + 1;
+            end
+        end
+
+        loop i in objs_n do
+            var IVisible* vis1 = objs[i];
+            var int id1   = vis1:id;
+            var int team1 = vis1:team;
+            loop j in objs_n-i-1 do
+                var IVisible* vis2 = objs[i+1+j];
+                var int id2   = vis2:id;
+                var int team2 = vis2:team;
+                if vis1==vis2 or (not _idVSid[id1][id2]) then
+                    continue;
+                end
+                if (id1==_VIS_FIRE or id2==_VIS_FIRE) and team1==team2 then
+                    continue;   // fire vs * of the same team does not collide
+                end
+                if _SDL_HasIntersection(&vis1:rect,&vis2:rect) then
+                    // TODO: single vis collision (aXb not aXc)
                     emit vis1:go_collide => vis2;
                     emit vis2:go_collide => vis1;
                 end
