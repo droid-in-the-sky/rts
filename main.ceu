@@ -42,29 +42,27 @@ var  Ren_end    _;
 // create two initial units
 spawn Unit in global:all with
     this.id     = _VIS_UNIT;
-    this.team   = 1;
+    this.team   =   1;
     this.speed  = 100;
     this.tex    = _TEX_STORMTROOPER;
     this.life   =  10;
     this.damage =   2;
     this.range  = 100;
-    this.rect.x =  10;
-    this.rect.y =  10;
-    this.rect.w =  32;
-    this.rect.h =  48;
+    this.pos.x =   30;
+    this.pos.y =   30;
+    this.rad   =   20;
 end;
 spawn Unit in global:all with
     this.id     = _VIS_UNIT;
-    this.team   = 2;
+    this.team   =   2;
     this.speed  =  30;
     this.tex    = _TEX_YODA;
     this.life   =  50;
     this.damage =  10;
-    this.range  = 0;
-    this.rect.x = 150;
-    this.rect.y = 150;
-    this.rect.w =  32;
-    this.rect.h =  48;
+    this.range  =   0;
+    this.pos.x  = 200;
+    this.pos.y  = 200;
+    this.rad    =  20;
 end;
 
 par/or do
@@ -83,12 +81,13 @@ par/or do
             end
         end
 
+        // TODO NxN (could be NxN/2)
         loop i in objs_n do
             var IVisible* vis1 = objs[i];
             var int id1   = vis1:id;
             var int team1 = vis1:team;
-            loop j in objs_n-i-1 do
-                var IVisible* vis2 = objs[i+1+j];
+            loop j in objs_n do
+                var IVisible* vis2 = objs[j];
                 var int id2   = vis2:id;
                 var int team2 = vis2:team;
                 if vis1==vis2 or (not _idVSid[id1][id2]) then
@@ -97,7 +96,10 @@ par/or do
                 if (id1==_VIS_FIRE or id2==_VIS_FIRE) and team1==team2 then
                     continue;   // fire vs * of the same team does not collide
                 end
-                if _SDL_HasIntersection(&vis1:rect,&vis2:rect) then
+                if (id1==_VIS_RANGE or id2==_VIS_RANGE) and team1==team2 then
+                    continue;   // range vs * of the same team does not collide
+                end
+                if _SDL_Circle_vs_Circle(&vis1:pos,vis1:rad,&vis2:pos,vis2:rad) then
                     // TODO: single vis collision (aXb not aXc)
                     emit vis1:go_collide => vis2;
                     emit vis2:go_collide => vis1;
@@ -113,7 +115,7 @@ with
         // right click: activate nest or move selected units
         if but:button == _SDL_BUTTON_RIGHT then
             // activate nest
-            if _SDL_Rect_vs_Mouse(&nest.rect,but) then
+            if _SDL_Circle_vs_Mouse(&nest.pos, nest.rad, but) then
                 emit nest.go_build;
 
             // move selected units
@@ -121,8 +123,8 @@ with
                 loop (Unit*)u in global:all do
                     if u:selected? then
                         var _SDL_Point pt;
-                            pt.x = (int) but:x - u:rect.w/2;
-                            pt.y = (int) but:y - u:rect.h/2;
+                            pt.x = (int) but:x;
+                            pt.y = (int) but:y;
                         emit u:go_point => &pt;
                     end
                 end
@@ -137,7 +139,7 @@ with
                 if u:team != 1 then
                     continue;               // skip enemies
                 end
-                if _SDL_Rect_vs_Mouse(&u:rect, but) then
+                if _SDL_Circle_vs_Mouse(&u:pos, u:rad, but) then
                     go_group? = false;      // found, no group region
                     u:selected? = not u:selected?;
                 else

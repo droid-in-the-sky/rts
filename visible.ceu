@@ -24,7 +24,8 @@ interface IVisible with
     var   int        id;         // type identifier (e.g. _VIS_YODA)
     var   int        team;       // team identifier [1,2]
     var   int        speed;      // speed in px/s
-    var   _SDL_Rect  rect;       // position (x,y) and dimension (w,h)
+    var   _SDL_Point pos;        // position (x,y)
+    var   int        rad;        // dimension radix
     event IVisible*  go_collide; // collided with other "IVisible"
 end
 
@@ -39,19 +40,19 @@ class MoveIVisible with
 do
     _assert(this.vis != null);
 
-    // use float on calculations (write back to "rect" on each "DT" cycle)
-    var float sx = vis:rect.x;
-    var float sy = vis:rect.y;
+    // use float on calculations (write back to "pos" on each "DT" cycle)
+    var float sx = vis:pos.x;
+    var float sy = vis:pos.y;
     var float vx;
     var float vy;
 
     // fallback position on collisions
-    var int old_x = vis:rect.x;
-    var int old_y = vis:rect.y;
+    var int old_x = vis:pos.x;
+    var int old_y = vis:pos.y;
 
     // calculate speed ratio "vx" vs "vy"
-    var float dx = _abs(vis:rect.x - to.x);
-    var float dy = _abs(vis:rect.y - to.y);
+    var float dx = _abs(vis:pos.x - to.x);
+    var float dy = _abs(vis:pos.y - to.y);
     if dx == 0 then
         vx = 0;
         vy = vis:speed;
@@ -67,16 +68,16 @@ do
         loop do
             var IVisible* oth = await vis:go_collide
                                 until oth:id == _VIS_UNIT;
-            vis:rect.x = old_x;
-            vis:rect.y = old_y;
+            vis:pos.x = old_x;
+            vis:pos.y = old_y;
             sx = old_x;
             sy = old_y;
         end
     with
         var int dt;
         every dt in SDL_DT do
-            old_x = vis:rect.x;    // save as old position
-            old_y = vis:rect.y;    // to avoid collision
+            old_x = vis:pos.x;    // save as old position
+            old_y = vis:pos.y;    // to avoid collision
 
             var float vx_ = vx;
             if sx > to.x then
@@ -90,16 +91,16 @@ do
             end
             sy = sy + vy_*dt/1000;
 
-            vis:rect.x = sx;
-            vis:rect.y = sy;
+            vis:pos.x = sx;
+            vis:pos.y = sy;
 
-            if  (vx_>0 and vis:rect.x>=to.x or
-                 vx_<0 and vis:rect.x<=to.x)
-            and (vy_>0 and vis:rect.y>=to.y or
-                 vy_<0 and vis:rect.y<=to.y)
+            if  (vx_>0 and vis:pos.x>=to.x or
+                 vx_<0 and vis:pos.x<=to.x)
+            and (vy_>0 and vis:pos.y>=to.y or
+                 vy_<0 and vis:pos.y<=to.y)
             then
-                vis:rect.x = (int)to.x; // round to destination
-                vis:rect.y = (int)to.y; //   ""
+                vis:pos.x = (int)to.x; // round to destination
+                vis:pos.y = (int)to.y; //   ""
                 break;                  // reached destination
             end
         end

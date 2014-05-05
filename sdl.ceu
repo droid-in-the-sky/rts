@@ -75,7 +75,10 @@ native nohold _SDL_GL_BindTexture(),
               _Mix_CloseAudio(),
               _Mix_OpenAudio();
 
-native nohold _SDL_Rect_vs_Mouse(),
+native nohold _SDL_Circle_vs_Mouse(),
+              _SDL_Circle_vs_Point(),
+              _SDL_Circle_vs_Circle(),
+              _SDL_Rect_vs_Mouse(),
               _SDL_Rect_vs_Point(),
               _SDL_Rect2Point(),
               _SDL_Point2Rect(),
@@ -103,6 +106,25 @@ native do
     SDL_Rect SDL_Point2Rect (SDL_Point* pt, int radix) {
         SDL_Rect r = { pt->x-radix, pt->y-radix, radix*2, radix*2 };
         return r;
+    }
+
+    int SDL_Circle_vs_Mouse (SDL_Point* pos, int rad, SDL_MouseButtonEvent* but) {
+// TODO
+        SDL_Point pt = { but->x, but->y };
+        return SDL_Circle_vs_Point(pos, rad, &pt);
+    }
+
+    int SDL_Circle_vs_Point (SDL_Point* pos, int rad, SDL_Point* pt) {
+// TODO
+        SDL_Rect r = SDL_Point2Rect(pos, rad);
+        return SDL_Rect_vs_Point(&r, pt);
+    }
+
+    int SDL_Circle_vs_Circle (SDL_Point* pos1, int rad1, SDL_Point* pos2, int rad2) {
+// TODO
+        SDL_Rect r1 = SDL_Point2Rect(pos1, rad1);
+        SDL_Rect r2 = SDL_Point2Rect(pos2, rad2);
+        return SDL_HasIntersection(&r1, &r2);
     }
 end
 

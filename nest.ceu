@@ -1,5 +1,6 @@
 class Nest with
-    var _SDL_Rect   rect;
+    var _SDL_Point  pos;
+    var int         rad;
     var _SDL_Color  clr;
     var int         cost;
 
@@ -8,10 +9,9 @@ do
     clr.r = 50;
     clr.g = 50;
     clr.b = 50;
-    rect.x = 400;
-    rect.y = 200;
-    rect.w = 100;
-    rect.h = 100;
+    pos.x = 400;
+    pos.y = 200;
+    rad   =  40;
     cost = 50;
 
     var int tot_max = 25;   // bar max
@@ -42,10 +42,9 @@ do
                     this.life   =  10;
                     this.damage =   2;
                     this.range  = 100;
-                    this.rect.x =  10;
-                    this.rect.y =  10;
-                    this.rect.w =  32;
-                    this.rect.h =  48;
+                    this.pos.x  =  30;
+                    this.pos.y  =  30;
+                    this.rad    =  20;
                 end;
             else
                 loop i in 3 do
@@ -59,13 +58,14 @@ do
     with
         every SDL_REDRAW do
             _SDL_SetRenderDrawColor(_REN, clr.r,clr.g,clr.b,255);
-            _SDL_RenderFillRect(_REN, &this.rect);
+            _filledCircleRGBA(_REN, pos.x,pos.y,rad,
+                                    clr.r,clr.g,clr.b,255);
 
             if tot_cur > 0 then
                 _SDL_SetRenderDrawColor(_REN, 200,200,200,255);
                 var _SDL_Rect r;
-                    r.x = this.rect.x + 9;
-                    r.y = this.rect.y + this.rect.h - 11;
+                    r.x = this.pos.x + 9;
+                    r.y = this.pos.y + this.rad - 11;
                     r.w = tot_max;
                     r.h = 4;
                 _SDL_RenderDrawRect(_REN, &r);
