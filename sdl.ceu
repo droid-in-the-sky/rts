@@ -109,22 +109,17 @@ native do
     }
 
     int SDL_Circle_vs_Mouse (SDL_Point* pos, int rad, SDL_MouseButtonEvent* but) {
-// TODO
         SDL_Point pt = { but->x, but->y };
         return SDL_Circle_vs_Point(pos, rad, &pt);
     }
 
     int SDL_Circle_vs_Point (SDL_Point* pos, int rad, SDL_Point* pt) {
-// TODO
-        SDL_Rect r = SDL_Point2Rect(pos, rad);
-        return SDL_Rect_vs_Point(&r, pt);
+        return sqrt( pow(pos->x-pt->x,2) + pow(pos->y-pt->y,2) ) < rad;
     }
 
     int SDL_Circle_vs_Circle (SDL_Point* pos1, int rad1, SDL_Point* pos2, int rad2) {
-// TODO
-        SDL_Rect r1 = SDL_Point2Rect(pos1, rad1);
-        SDL_Rect r2 = SDL_Point2Rect(pos2, rad2);
-        return SDL_HasIntersection(&r1, &r2);
+        return sqrt( pow(pos1->x-pos2->x,2) + pow(pos1->y-pos2->y,2) )
+                < rad1+rad2;
     }
 end
 
