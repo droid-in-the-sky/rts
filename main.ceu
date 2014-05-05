@@ -90,14 +90,15 @@ par/or do
                 var IVisible* vis2 = objs[j];
                 var int id2   = vis2:id;
                 var int team2 = vis2:team;
-                if vis1==vis2 or (not _idVSid[id1][id2]) then
+                var int col = _idVSid[id1][id2];
+                if vis1==vis2 or col==0 then
                     continue;
                 end
-                if (id1==_VIS_FIRE or id2==_VIS_FIRE) and team1==team2 then
-                    continue;   // fire vs * of the same team does not collide
+                if team1!=team2 and (not (col&_COL_ENEMY)) then
+                    continue;   // skip different team and ENEMY flag is off
                 end
-                if (id1==_VIS_RANGE or id2==_VIS_RANGE) and team1==team2 then
-                    continue;   // range vs * of the same team does not collide
+                if team1==team2 and (not (col&_COL_FRIEND)) then
+                    continue;   // skip same team and FRIEND flag is off
                 end
                 if _SDL_Circle_vs_Circle(&vis1:pos,vis1:rad,&vis2:pos,vis2:rad) then
                     // TODO: single vis collision (aXb not aXc)

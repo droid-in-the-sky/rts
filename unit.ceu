@@ -45,8 +45,8 @@ do
     par/or do
         await move.ok;
     with
-        var IVisible* vis = await this.go_collide
-                            until vis:team != this.team;
+        var IVisible* vis = await this.go_collide;
+                            // different team is guaranteed by idVSid
         var IUnit* oth = (IUnit*) vis;
         _assert(oth != null);
         emit oth:go_hit => this.damage;
@@ -75,7 +75,7 @@ do
     with
         loop do
             var IVisible* vis = await this.go_collide;
-                                //until vis:team != this.team;
+                                // different team is guaranteed by idVSid
             var IUnit* oth = (IUnit*)vis;
             if oth != null then
                 await 1s;   // TODO: depend on speed
