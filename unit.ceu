@@ -6,6 +6,7 @@ interface IUnit with
     var   bool          selected?;  // to receive commands from player
     event int           go_hit;     // hitted with "int" damage
     event _SDL_Point*   go_point;   // move to "_SDL_Point" (null stop)
+    event IVisible*     go_follow;  // follow "IVisible"
     var   IVisible*     vis_range;
 end
 
@@ -38,7 +39,7 @@ do
     // move "this" to "to"
     var IVisible* me = &this;
     var MoveIVisible move with
-        this.vis = me;
+        this.vis := me; // TODO
         this.to  = to;
     end;
 
@@ -78,15 +79,17 @@ do
                                 // different team is guaranteed by idVSid
             var IUnit* oth = (IUnit*)vis;
             if oth != null then
-                await 1s;   // TODO: depend on speed
-                spawn Fire in global:all with
-                    this.id    = _VIS_FIRE;
-                    this.team  = team;
-                    this.speed = unit:speed * 3;
-                    this.pos   = pos;
-                    this.to    := oth:pos;
-                    this.damage = unit:damage;
-                end;
+                watching oth do
+                    await 500ms;   // TODO: depend on speed
+                    spawn Fire in global:all with
+                        this.id    = _VIS_FIRE;
+                        this.team  = team;
+                        this.speed = unit:speed * 3;
+                        this.pos   = pos;
+                        this.to    = oth:pos;
+                        this.damage = unit:damage;
+                    end;
+                end
             end
         end
     with
@@ -107,7 +110,6 @@ class Unit with
         var int             damage      = 0;
         var _SDL_Texture*   tex         = null;
         var bool            selected?   = 0;
-        event _SDL_Point*   go_point;
         var   IVisible*     vis_range   = null;
 
     var _SDL_Texture* tex;
@@ -120,7 +122,7 @@ do
 
     var IUnit* me = &this;
     var Range vis_range_ with
-        this.unit = me;
+        this.unit := me;    // TODO
     end;
     this.vis_range = &vis_range_;
 
@@ -148,52 +150,76 @@ do
         // - perform melee attack after a reaction/performing time
         // - TODO: ignores all but the first colliding org
         loop do
-            var IVisible* vis = await this.go_collide
-                                until vis:team != this.team;
+            var IVisible* vis := await this.go_collide
+                                 until vis:team != this.team;
+                                // := work around "vis" inside await-until
             var IUnit* oth = (IUnit*)vis;
-            if oth then
+            if oth != null then
                 watching oth do
                     await 500ms;   // TODO: depend on speed
                     _Mix_PlayChannel(-1, _SND_SWORD, 0);
                     spawn Fog in global:all with
-                        this.pos := oth:pos;
+                        this.pos = oth:pos;
                     end;
                     emit oth:go_hit => this.damage;
                 end
             end
         end
     with
-        // MOVEMENT (go_point) //
-        var bool       go? = false;
+        // either MOVE (go_point) or FOLLOW (go_follow) //
+        var int go? = false;
+        var IVisible* vis = null;
         var _SDL_Point to;
         loop do
-            finalize with
-                clip.x = 0;     // always terminate on standing position
-            end
+
             par/or do
-                var _SDL_Point* ptr = await go_point;
-                go? = (ptr != null);
-                if ptr != null then
-                    to := *ptr;
+                var _SDL_Point* pt = await go_point;
+                if pt != null then
+                    go? = true;
+                    to = *pt;
+                end
+            with
+                var IVisible* vis_ = await go_follow;
+                vis := vis_;
+                    // TODO: tight path to "watching vis"
+                if vis != null then
+                    go? = true;
+                    to = vis:pos;
                 end
             with
                 if not go? then
                     await FOREVER;
                 end
-                go? = false;    // not again
+                go? = false;
+
+                finalize with
+                    clip.x = 0;     // always terminate on standing position
+                end
 
                 // move "this" to "*to"
                 var IVisible* me = &this;
                 var MoveIVisible move with
-                    this.vis = me;
+                    this.vis := me; // TODO
                     this.to  = to;
                 end;
-                // animate sprite frames while moving
-                watching move.ok do
-                    loop do
-                        loop i in 4 do
-                            clip.x = clip.w*i;
-                            await (10000/this.speed)ms;
+
+                par do
+                    // animate sprite frames while moving
+                    watching move.ok do
+                        loop do
+                            loop i in 4 do
+                                clip.x = clip.w*i;
+                                await (10000/this.speed)ms;
+                            end
+                        end
+                    end
+                with
+                    // follow
+                    if vis != null then
+                        watching vis do
+                            every 500ms do
+                                move.to = vis:pos;
+                            end
                         end
                     end
                 end
@@ -204,12 +230,12 @@ do
             if this.selected? then
                 _filledCircleRGBA(_REN, pos.x,pos.y,rad, 0x88,0x88,0x88,0x88);
             end
-/*
+        /*
             if pt_goto? then
                 _SDL_RenderDrawLine(_REN, rect.x+w2, rect.y+h2,
                                           pt_goto.x+w2, pt_goto.y+h2);
             end
-*/
+        */
             var _SDL_Rect r;
                 r.x = pos.x - 32/2;     // TODO
                 r.y = pos.y - 48/2;     // TODO

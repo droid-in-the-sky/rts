@@ -44,7 +44,7 @@ spawn Unit in global:all with
     this.id     = _VIS_UNIT;
     this.team   =   1;
     this.speed  = 100;
-    this.tex    = _TEX_STORMTROOPER;
+    this.tex    := _TEX_STORMTROOPER;
     this.life   =  10;
     this.damage =   2;
     this.range  = 100;
@@ -55,8 +55,8 @@ end;
 spawn Unit in global:all with
     this.id     = _VIS_UNIT;
     this.team   =   2;
-    this.speed  =  30;
-    this.tex    = _TEX_YODA;
+    this.speed  =  300;
+    this.tex    := _TEX_YODA;
     this.life   =  50;
     this.damage =  10;
     this.range  =   0;
@@ -121,12 +121,26 @@ with
 
             // move selected units
             else
-                loop (Unit*)u in global:all do
+                // check "move" or "follow"
+                var IUnit* enemy = null;
+                loop (IUnit*)u in global:all do
+                    if u:team==2 and _SDL_Circle_vs_Mouse(&u:pos,u:rad,but) then
+                        enemy := u;    // clicked on enemy, follow it
+                                // TODO: tight path to enemy use
+                        break;
+                    end
+                end
+
+                loop (IUnit*)u in global:all do
                     if u:selected? then
                         var _SDL_Point pt;
                             pt.x = (int) but:x;
                             pt.y = (int) but:y;
-                        emit u:go_point => &pt;
+                        if enemy == null then
+                            emit u:go_point => &pt;
+                        else
+                            emit u:go_follow => enemy;
+                        end
                     end
                 end
             end
@@ -138,7 +152,8 @@ with
             var bool go_group? = true;
             loop (Unit*)u in global:all do
                 if u:team != 1 then
-                    continue;               // skip enemies
+                    //continue;               // skip enemies
+// TODO: move yoda
                 end
                 if _SDL_Circle_vs_Mouse(&u:pos, u:rad, but) then
                     go_group? = false;      // found, no group region

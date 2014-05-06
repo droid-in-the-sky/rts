@@ -61,20 +61,6 @@ do
     var int old_x = vis:pos.x;
     var int old_y = vis:pos.y;
 
-    // calculate speed ratio "vx" vs "vy"
-    var float dx = _abs(vis:pos.x - to.x);
-    var float dy = _abs(vis:pos.y - to.y);
-    if dx == 0 then
-        vx = 0;
-        vy = vis:speed;
-    else/if dy == 0 then
-        vx = vis:speed;
-        vy = 0;
-    else
-        vx = vis:speed / _sqrt(1 + _pow(dy/dx,2));
-        vy = vx * (dy/dx);
-    end
-
     par/or do
         loop do
             var IVisible* oth = await vis:go_collide
@@ -87,6 +73,20 @@ do
     with
         var int dt;
         every dt in SDL_DT do
+            // calculate speed ratio "vx" vs "vy"
+            var float dx = _abs(vis:pos.x - to.x);
+            var float dy = _abs(vis:pos.y - to.y);
+            if dx == 0 then
+                vx = 0;
+                vy = vis:speed;
+            else/if dy == 0 then
+                vx = vis:speed;
+                vy = 0;
+            else
+                vx = vis:speed / _sqrt(1 + _pow(dy/dx,2));
+                vy = vx * (dy/dx);
+            end
+
             old_x = vis:pos.x;    // save as old position
             old_y = vis:pos.y;    // to avoid collision
 
@@ -105,10 +105,10 @@ do
             vis:pos.x = sx;
             vis:pos.y = sy;
 
-            if  (vx_>0 and vis:pos.x>=to.x or
-                 vx_<0 and vis:pos.x<=to.x)
-            and (vy_>0 and vis:pos.y>=to.y or
-                 vy_<0 and vis:pos.y<=to.y)
+            if  (vx_>=0 and vis:pos.x>=to.x or
+                 vx_<=0 and vis:pos.x<=to.x)
+            and (vy_>=0 and vis:pos.y>=to.y or
+                 vy_<=0 and vis:pos.y<=to.y)
             then
                 vis:pos.x = (int)to.x; // round to destination
                 vis:pos.y = (int)to.y; //   ""

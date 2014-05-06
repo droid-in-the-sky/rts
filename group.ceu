@@ -35,7 +35,7 @@ do
                         loop (Unit*)u in global:all do
                             if  u:id   == _VIS_UNIT
                             and u:team == 1 then
-                                var _SDL_Rect r := _SDL_Point2Rect(&u:pos, u:rad);
+                                var _SDL_Rect r = _SDL_Point2Rect(&u:pos, u:rad);
                                     // TODO: rect vs circle
                                 u:selected? = _SDL_HasIntersection(&r,&rect);
                             end

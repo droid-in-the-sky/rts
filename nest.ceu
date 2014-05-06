@@ -38,7 +38,7 @@ do
                     this.id     = _VIS_UNIT;
                     this.team   = 1;
                     this.speed  = 100;
-                    this.tex    = _TEX_STORMTROOPER;
+                    this.tex    := _TEX_STORMTROOPER;
                     this.life   =  10;
                     this.damage =   2;
                     this.range  = 100;

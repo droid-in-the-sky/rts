@@ -7,20 +7,23 @@ end
 
 _SDL_GetWindowSize(win, &_REN_W, &_REN_H);
 
-_REN = _SDL_CreateRenderer(win, -1, 0);
-    finalize with
-        _SDL_DestroyRenderer(_REN);
-    end
+finalize
+    _REN = _SDL_CreateRenderer(win, -1, 0);
+with
+    _SDL_DestroyRenderer(_REN);
+end
 
-_TEX_STORMTROOPER = _IMG_LoadTexture(_REN, "imgs/stormtrooper.png");
-    finalize with
-        _SDL_DestroyTexture(_TEX_STORMTROOPER);
-    end
+finalize
+    _TEX_STORMTROOPER = _IMG_LoadTexture(_REN, "imgs/stormtrooper.png");
+with
+    _SDL_DestroyTexture(_TEX_STORMTROOPER);
+end
 
-_TEX_YODA = _IMG_LoadTexture(_REN, "imgs/yoda.png");
-    finalize with
-        _SDL_DestroyTexture(_TEX_YODA);
-    end
+finalize
+    _TEX_YODA = _IMG_LoadTexture(_REN, "imgs/yoda.png");
+with
+    _SDL_DestroyTexture(_TEX_YODA);
+end
 
 class Ren_ini with
 do
