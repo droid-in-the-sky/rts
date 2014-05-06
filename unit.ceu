@@ -37,10 +37,9 @@ do
     _assert(this.damage != 0);
 
     // move "this" to "to"
-    var IVisible* me = &this;
     var MoveIVisible move with
-        this.vis := me; // TODO
-        this.to  = to;
+        _.vis = &this;
+        _.to  = to;
     end;
 
     par/or do
@@ -80,14 +79,14 @@ do
             var IUnit* oth = (IUnit*)vis;
             if oth != null then
                 watching oth do
-                    await 500ms;   // TODO: depend on speed
+                    await 1s;   // TODO: depend on speed
                     spawn Fire in global:all with
-                        this.id    = _VIS_FIRE;
-                        this.team  = team;
-                        this.speed = unit:speed * 3;
-                        this.pos   = pos;
-                        this.to    = oth:pos;
-                        this.damage = unit:damage;
+                        _.id    = _VIS_FIRE;
+                        _.team  = team;
+                        _.speed = unit:speed * 3;
+                        _.pos   = pos;
+                        _.to    = oth:pos;
+                        _.damage = unit:damage;
                     end;
                 end
             end
@@ -120,9 +119,8 @@ do
     _assert(this.life   != 0);
     _assert(this.damage != 0);
 
-    var IUnit* me = &this;
     var Range vis_range_ with
-        this.unit := me;    // TODO
+        _.unit = &this;
     end;
     this.vis_range = &vis_range_;
 
@@ -159,7 +157,7 @@ do
                     await 500ms;   // TODO: depend on speed
                     _Mix_PlayChannel(-1, _SND_SWORD, 0);
                     spawn Fog in global:all with
-                        this.pos = oth:pos;
+                        _.pos = oth:pos;
                     end;
                     emit oth:go_hit => this.damage;
                 end
@@ -197,13 +195,12 @@ do
                 end
 
                 // move "this" to "*to"
-                var IVisible* me = &this;
                 var MoveIVisible move with
-                    this.vis := me; // TODO
-                    this.to  = to;
+                    _.vis = &this;
+                    _.to  = to;
                 end;
 
-                par do
+                par/or do
                     // animate sprite frames while moving
                     watching move.ok do
                         loop do
@@ -215,7 +212,9 @@ do
                     end
                 with
                     // follow
-                    if vis != null then
+                    if vis == null then
+                        await FOREVER;
+                    else
                         watching vis do
                             every 500ms do
                                 move.to = vis:pos;

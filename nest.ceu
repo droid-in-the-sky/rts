@@ -35,16 +35,16 @@ do
 
                 // SPAWN UNIT
                 spawn Unit in global:all with
-                    this.id     = _VIS_UNIT;
-                    this.team   = 1;
-                    this.speed  = 100;
-                    this.tex    := _TEX_STORMTROOPER;
-                    this.life   =  10;
-                    this.damage =   2;
-                    this.range  = 100;
-                    this.pos.x  =  30;
-                    this.pos.y  =  30;
-                    this.rad    =  20;
+                    _.id     = _VIS_UNIT;
+                    _.team   = 1;
+                    _.speed  = 100;
+                    _.tex    := _TEX_STORMTROOPER;
+                    _.life   =  10;
+                    _.damage =   2;
+                    _.range  = 100;
+                    _.pos.x  =  30;
+                    _.pos.y  =  30;
+                    _.rad    =  20;
                 end;
             else
                 loop i in 3 do

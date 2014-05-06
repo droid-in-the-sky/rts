@@ -41,28 +41,28 @@ var  Ren_end    _;
 
 // create two initial units
 spawn Unit in global:all with
-    this.id     = _VIS_UNIT;
-    this.team   =   1;
-    this.speed  = 100;
-    this.tex    := _TEX_STORMTROOPER;
-    this.life   =  10;
-    this.damage =   2;
-    this.range  = 100;
-    this.pos.x =   30;
-    this.pos.y =   30;
-    this.rad   =   20;
+    _.id     = _VIS_UNIT;
+    _.team   =   1;
+    _.speed  = 100;
+    _.tex    := _TEX_STORMTROOPER;
+    _.life   =  10;
+    _.damage =   2;
+    _.range  = 100;
+    _.pos.x =   30;
+    _.pos.y =   30;
+    _.rad   =   20;
 end;
 spawn Unit in global:all with
-    this.id     = _VIS_UNIT;
-    this.team   =   2;
-    this.speed  =  300;
-    this.tex    := _TEX_YODA;
-    this.life   =  50;
-    this.damage =  10;
-    this.range  =   0;
-    this.pos.x  = 200;
-    this.pos.y  = 200;
-    this.rad    =  20;
+    _.id     = _VIS_UNIT;
+    _.team   =   2;
+    _.speed  =  300;
+    _.tex    := _TEX_YODA;
+    _.life   =  50;
+    _.damage =  10;
+    _.range  =   0;
+    _.pos.x  = 200;
+    _.pos.y  = 200;
+    _.rad    =  20;
 end;
 
 par/or do
