@@ -17,7 +17,7 @@ do
     var int tot_max = 25;   // bar max
     var int tot_cur = 0;    // bar ongoing
 
-    par/or do
+    par do
         // spawn units on request
         loop do
             finalize with

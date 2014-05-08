@@ -107,11 +107,10 @@ class Unit with
         // IUnit
         var int             range       = 0;
         var int             damage      = 0;
-        var _SDL_Texture*   tex         = null;
         var bool            selected?   = 0;
         var   IVisible*     vis_range   = null;
 
-    var _SDL_Texture* tex;
+    var _SDL_Texture* tex = null;
 do
     _assert(this.team   != 0);
     _assert(this.speed  != 0);
@@ -220,6 +219,7 @@ do
                                 move.to = vis:pos;
                             end
                         end
+                        await 100ms;    // eliminates tight loop WRN
                     end
                 end
             end
