@@ -12,7 +12,7 @@ do
     pos.x = 400;
     pos.y = 200;
     rad   =  40;
-    cost = 50;
+    cost  = 50;
 
     var int tot_max = 25;   // bar max
     var int tot_cur = 0;    // bar ongoing

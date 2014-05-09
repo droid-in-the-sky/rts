@@ -105,10 +105,10 @@ class Unit with
         var int team  = 0;
         var int speed = 0;
         // IUnit
-        var int             range       = 0;
-        var int             damage      = 0;
-        var bool            selected?   = 0;
-        var   IVisible*     vis_range   = null;
+        var int       range       = 0;
+        var int       damage      = 0;
+        var bool      selected?   = 0;
+        var IVisible* vis_range   = null;
 
     var _SDL_Texture* tex = null;
 do
