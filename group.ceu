@@ -32,7 +32,7 @@ do
                 every but2 in SDL_MOUSEBUTTONUP do
                     if but2:button == _SDL_BUTTON_LEFT then
                         // select all units in the selected region
-                        loop (Unit*)u in global:all do
+                        loop (Unit*)u in global:p:all do
                             if  u:id   == _VIS_UNIT
                             and u:team == 1 then
                                 var _SDL_Rect r = _SDL_Point2Rect(&u:pos, u:rad);

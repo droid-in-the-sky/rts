@@ -80,7 +80,7 @@ do
             if oth != null then
                 watching oth do
                     await 1s;   // TODO: depend on speed
-                    spawn Fire in global:all with
+                    spawn Fire in global:p:all with
                         _.id    = _VIS_FIRE;
                         _.team  = team;
                         _.speed = unit:speed * 3;
@@ -155,7 +155,7 @@ do
                 watching oth do
                     await 500ms;   // TODO: depend on speed
                     _Mix_PlayChannel(-1, _SND_SWORD, 0);
-                    spawn Fog in global:all with
+                    spawn Fog in global:p:all with
                         _.pos = oth:pos;
                     end;
                     emit oth:go_hit => this.damage;
@@ -229,12 +229,6 @@ do
             if this.selected? then
                 _filledCircleRGBA(_REN, pos.x,pos.y,rad, 0x88,0x88,0x88,0x88);
             end
-        /*
-            if pt_goto? then
-                _SDL_RenderDrawLine(_REN, rect.x+w2, rect.y+h2,
-                                          pt_goto.x+w2, pt_goto.y+h2);
-            end
-        */
             var _SDL_Rect r;
                 r.x = pos.x - 32/2;     // TODO
                 r.y = pos.y - 48/2;     // TODO

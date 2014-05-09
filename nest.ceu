@@ -34,7 +34,7 @@ do
                 end
 
                 // SPAWN UNIT
-                spawn Unit in global:all with
+                spawn Unit in global:p:all with
                     _.id     = _VIS_UNIT;
                     _.team   = 1;
                     _.speed  = 100;

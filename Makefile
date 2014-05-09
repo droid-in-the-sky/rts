@@ -10,10 +10,14 @@ all:
 		-lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer -lSDL2_gfx \
 		-o war.exe
 
+FILES = group.ceu main.ceu nest.ceu ren.ceu snd.ceu unit.ceu visible.ceu
+
 count:
-	wc group.ceu main.ceu nest.ceu ren.ceu snd.ceu unit.ceu visible.ceu
-	cat *.ceu | grep "^ *//" | wc
-	#cat *.ceu | grep "^$" | wc
+	wc $(FILES)
+	cat $(FILES) | grep "^ *//" | wc
+	cat $(FILES) | grep "^ */\*" | wc
+	cat $(FILES) | grep "^ *\*" | wc
+	#cat group.ceu main.ceu nest.ceu ren.ceu snd.ceu unit.ceu visible.ceu | grep "^$" | wc
 
 clean:
 	rm -f *.exe _ceu_

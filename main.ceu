@@ -20,11 +20,18 @@ var _SDL_Window* win;
         _SDL_DestroyWindow(win);
     end
 
-interface Global with
-    var int money;      // player money
+class Pool with
     pool IVisible[] all;
+do
+    await FOREVER;
 end
-var int money = 1000;
+
+interface Global with
+    var int   money;      // player money
+    var Pool* p;
+end
+var int   money = 1000;
+var Pool* p     = null;
 
 #include "ren.ceu"
 #include "snd.ceu"
@@ -33,179 +40,155 @@ var int money = 1000;
 #include "nest.ceu"
 #include "group.ceu"
 
-var  Ren_ini    _;
-var  Group      group;
-var  Nest       nest;
-pool IVisible[]  all;
-var  Ren_end    _;
-
-// create two initial units
-spawn Unit in global:all with
-    _.id     = _VIS_UNIT;
-    _.team   =   1;
-    _.speed  = 100;
-    _.tex    := _TEX_STORMTROOPER;
-    _.life   =  10;
-    _.damage =   2;
-    _.range  = 100;
-    _.pos.x =   30;
-    _.pos.y =   30;
-    _.rad   =   20;
-end;
-spawn Unit in global:all with
-    _.id     = _VIS_UNIT;
-    _.team   =   2;
-    _.speed  =  300;
-    _.tex    := _TEX_YODA;
-    _.life   =  50;
-    _.damage =  10;
-    _.range  =   0;
-    _.pos.x  = 200;
-    _.pos.y  = 200;
-    _.rad    =  20;
-end;
-
 par/or do
-    // COLLISION DETECTION //
-    // check collisions among all units every frame
-    every SDL_DT do
-        var IVisible*[100] objs;      // TODO: 100
-        var int          objs_n = 0;
-        loop (IVisible*)vis in global:all do
-            objs[objs_n] := vis;
-            objs_n = objs_n + 1;
-            var IUnit* u = (IUnit*) vis;
-            if u!=null and u:vis_range!=null then
-                objs[objs_n] := u:vis_range;
-                objs_n = objs_n + 1;
-            end
-        end
-
-        // TODO NxN (could be NxN/2)
-        loop i in objs_n do
-            var IVisible* vis1 = objs[i];
-            var int id1   = vis1:id;
-            var int team1 = vis1:team;
-            loop j in objs_n do
-                var IVisible* vis2 = objs[j];
-                var int id2   = vis2:id;
-                var int team2 = vis2:team;
-                var int col = _idVSid[id1][id2];
-                if vis1==vis2 or col==0 then
-                    continue;
-                end
-                if team1!=team2 and (not (col&_COL_ENEMY)) then
-                    continue;   // skip different team and ENEMY flag is off
-                end
-                if team1==team2 and (not (col&_COL_FRIEND)) then
-                    continue;   // skip same team and FRIEND flag is off
-                end
-                if _SDL_Circle_vs_Circle(&vis1:pos,vis1:rad,&vis2:pos,vis2:rad) then
-                    // TODO: single vis collision (aXb not aXc)
-                    emit vis1:go_collide => vis2;
-                    emit vis2:go_collide => vis1;
-                end
-            end
-        end
+    _SDL_SetRenderDrawColor(_REN, 100,100,100,255);
+    every SDL_REDRAW do
+        _boxRGBA(_REN, 0,0, _REN_W, _REN_H,
+                       0x00,0xAA,0x00,0xFF);
     end
 with
-    // MOUSE BUTTON INPUT //
-    var _SDL_MouseButtonEvent* but;
-    every but in SDL_MOUSEBUTTONDOWN do
+    var  Group group;
+    var  Nest  nest;
+    var  Pool  p_;
+    global:p := &p_;
+            // this block has the same scope as pool users
 
-        // right click: activate nest or move selected units
-        if but:button == _SDL_BUTTON_RIGHT then
-            // activate nest
-            if _SDL_Circle_vs_Mouse(&nest.pos, nest.rad, but) then
-                emit nest.go_build;
+    // create two initial units
+    spawn Unit in global:p:all with
+        _.id     = _VIS_UNIT;
+        _.team   =   1;
+        _.speed  = 100;
+        _.tex    := _TEX_STORMTROOPER;
+        _.life   =  10;
+        _.damage =   2;
+        _.range  = 100;
+        _.pos.x =   30;
+        _.pos.y =   30;
+        _.rad   =   20;
+    end;
+    spawn Unit in global:p:all with
+        _.id     = _VIS_UNIT;
+        _.team   =   2;
+        _.speed  =  300;
+        _.tex    := _TEX_YODA;
+        _.life   =  50;
+        _.damage =  10;
+        _.range  =   0;
+        _.pos.x  = 200;
+        _.pos.y  = 200;
+        _.rad    =  20;
+    end;
 
-            // move selected units
-            else
-                // check "move" or "follow"
-                var IUnit* enemy = null;
-                loop (IUnit*)u in global:all do
-                    if u:team==2 and _SDL_Circle_vs_Mouse(&u:pos,u:rad,but) then
-                        enemy := u;    // clicked on enemy, follow it
-                                // TODO: tight path to enemy use
-                        break;
+    par do
+        // COLLISION DETECTION //
+        // check collisions among all units every frame
+        every SDL_DT do
+            var IVisible*[100] objs;      // TODO: 100
+            var int          objs_n = 0;
+            loop (IVisible*)vis in global:p:all do
+
+                objs[objs_n] := vis;
+                objs_n = objs_n + 1;
+                var IUnit* u = (IUnit*) vis;
+                if u!=null and u:vis_range!=null then
+                    objs[objs_n] := u:vis_range;
+                    objs_n = objs_n + 1;
+                end
+            end
+
+            // TODO NxN (could be NxN/2)
+            loop i in objs_n do
+                var IVisible* vis1 = objs[i];
+                var int id1   = vis1:id;
+                var int team1 = vis1:team;
+                loop j in objs_n do
+                    var IVisible* vis2 = objs[j];
+                    var int id2   = vis2:id;
+                    var int team2 = vis2:team;
+                    var int col = _idVSid[id1][id2];
+                    if vis1==vis2 or col==0 then
+                        continue;
+                    end
+                    if team1!=team2 and (not (col&_COL_ENEMY)) then
+                        continue;   // skip different team and ENEMY flag is off
+                    end
+                    if team1==team2 and (not (col&_COL_FRIEND)) then
+                        continue;   // skip same team and FRIEND flag is off
+                    end
+                    if _SDL_Circle_vs_Circle(&vis1:pos,vis1:rad,&vis2:pos,vis2:rad) then
+                        // TODO: single vis collision (aXb not aXc)
+                        emit vis1:go_collide => vis2;
+                        emit vis2:go_collide => vis1;
                     end
                 end
+            end
+        end
+    with
+        // MOUSE BUTTON INPUT //
+        var _SDL_MouseButtonEvent* but;
+        every but in SDL_MOUSEBUTTONDOWN do
 
-                loop (IUnit*)u in global:all do
-                    if u:selected? then
-                        var _SDL_Point pt;
-                            pt.x = (int) but:x;
-                            pt.y = (int) but:y;
-                        if enemy == null then
-                            emit u:go_point => &pt;
-                        else
-                            emit u:go_follow => enemy;
+            // right click: activate nest or move selected units
+            if but:button == _SDL_BUTTON_RIGHT then
+                // activate nest
+                if _SDL_Circle_vs_Mouse(&nest.pos, nest.rad, but) then
+                    emit nest.go_build;
+
+                // move selected units
+                else
+                    // check "move" or "follow"
+                    var IUnit* enemy = null;
+                    loop (IUnit*)u in global:p:all do
+                        if u:team==2 and _SDL_Circle_vs_Mouse(&u:pos,u:rad,but) then
+                            enemy := u;    // clicked on enemy, follow it
+                                    // TODO: tight path to enemy use
+                            break;
+                        end
+                    end
+
+                    loop (IUnit*)u in global:p:all do
+                        if u:selected? then
+                            var _SDL_Point pt;
+                                pt.x = (int) but:x;
+                                pt.y = (int) but:y;
+                            if enemy == null then
+                                emit u:go_point => &pt;
+                            else
+                                emit u:go_follow => enemy;
+                            end
                         end
                     end
                 end
-            end
 
-        // left click: select unit or start group region
-        else/if but:button == _SDL_BUTTON_LEFT then
+            // left click: select unit or start group region
+            else/if but:button == _SDL_BUTTON_LEFT then
 
-            // select unit
-            var bool go_group? = true;
-            loop (Unit*)u in global:all do
-                if u:team != 1 then
-                    //continue;               // skip enemies
+                // select unit
+                var bool go_group? = true;
+                loop (Unit*)u in global:p:all do
+                    if u:team != 1 then
+                        //continue;               // skip enemies
 // TODO: move yoda
+                    end
+                    if _SDL_Circle_vs_Mouse(&u:pos, u:rad, but) then
+                        go_group? = false;      // found, no group region
+                        u:selected? = not u:selected?;
+                    else
+                        u:selected? = false;    // deselect all
+                    end
                 end
-                if _SDL_Circle_vs_Mouse(&u:pos, u:rad, but) then
-                    go_group? = false;      // found, no group region
-                    u:selected? = not u:selected?;
-                else
-                    u:selected? = false;    // deselect all
-                end
-            end
 
-            // start group region
-            if go_group? then
-                emit group.go => but;
+                // start group region
+                if go_group? then
+                    emit group.go => but;
+                end
             end
         end
     end
-#define DEBUG
-#ifdef DEBUG
 with
-    var int fps = 0;                // previous FPS
-    loop do
-        var int c = 0;              // reset the current counter
-
-        // create a texture with the previous FPS
-/*
-        var char[5] str;
-        _sprintf(str, "%d", fps);
-        var _SDL_Texture* tex;
-        finalize
-            tex = _SDL_text2texture(_REN, _FONT_SMALL, str,
-                                    &_colors.white, null);
-        with
-            _SDL_DestroyTexture(tex);
-        end
-        var _SDL_Rect r;
-            r.x = 200;
-            r.y = 200;
-            r.w = 30;
-            r.h = 30;
-*/
-
-        par/or do
-            await 1s;
-        with
-            every SDL_REDRAW do
-                c = c + 1;
-                //_SDL_RenderCopy(_REN, tex, null, &r);
-            end
-        end
-        fps = c;
-        _printf("[FPS=%d]\n", fps);
+    every SDL_REDRAW do
+        _SDL_RenderPresent(_REN);
     end
-#endif
 with
     await SDL_QUIT;
 end
