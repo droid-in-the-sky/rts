@@ -58,7 +58,7 @@ with
         _.id     = _VIS_UNIT;
         _.team   =   1;
         _.speed  = 100;
-        _.tex    := _TEX_STORMTROOPER;
+        _.tex    = _TEX_STORMTROOPER;
         _.life   =  10;
         _.damage =   2;
         _.range  = 100;
@@ -70,7 +70,7 @@ with
         _.id     = _VIS_UNIT;
         _.team   =   2;
         _.speed  =  300;
-        _.tex    := _TEX_YODA;
+        _.tex    = _TEX_YODA;
         _.life   =  50;
         _.damage =  10;
         _.range  =   0;
@@ -86,7 +86,6 @@ with
             var IVisible*[100] objs;      // TODO: 100
             var int          objs_n = 0;
             loop (IVisible*)vis in global:p:all do
-
                 objs[objs_n] := vis;
                 objs_n = objs_n + 1;
                 var IUnit* u = (IUnit*) vis;

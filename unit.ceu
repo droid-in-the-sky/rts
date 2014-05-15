@@ -38,7 +38,7 @@ do
 
     // move "this" to "to"
     var MoveIVisible move with
-        _.vis = &this;
+        _.vis = this;
         _.to  = to;
     end;
 
@@ -61,15 +61,14 @@ class Range with
     interface IVisible;
         var int id    = _VIS_RANGE;
         var int team  = 0;
-    var IUnit* unit = null;
+    var IUnit& unit;
 do
-    _assert(this.unit != null);
-    this.team = this.unit:team;
-    this.rad  = this.unit:range;
+    this.team = this.unit.team;
+    this.rad  = this.unit.range;
 
     par do
         loop do
-            this.pos = this.unit:pos;
+            this.pos = this.unit.pos;
             await SDL_DT;
         end
     with
@@ -83,10 +82,10 @@ do
                     spawn Fire in global:p:all with
                         _.id    = _VIS_FIRE;
                         _.team  = team;
-                        _.speed = unit:speed * 3;
+                        _.speed = unit.speed * 3;
                         _.pos   = pos;
                         _.to    = oth:pos;
-                        _.damage = unit:damage;
+                        _.damage = unit.damage;
                     end;
                 end
             end
@@ -110,16 +109,16 @@ class Unit with
         var bool      selected?   = 0;
         var IVisible* vis_range   = null;
 
-    var _SDL_Texture* tex = null;
+    var int tex = _TEX_MAX;
 do
     _assert(this.team   != 0);
     _assert(this.speed  != 0);
-    _assert(this.tex    != null);
+    _assert(this.tex    < _TEX_MAX);
     _assert(this.life   != 0);
     _assert(this.damage != 0);
 
     var Range vis_range_ with
-        _.unit = &this;
+        _.unit = this;
     end;
     this.vis_range = &vis_range_;
 
@@ -195,7 +194,7 @@ do
 
                 // move "this" to "*to"
                 var MoveIVisible move with
-                    _.vis = &this;
+                    _.vis = this;
                     _.to  = to;
                 end;
 
@@ -234,7 +233,7 @@ do
                 r.y = pos.y - 48/2;     // TODO
                 r.w = 32;               // TODO
                 r.h = 48;               // TODO
-            _SDL_RenderCopy(_REN, this.tex, &clip, &r);
+            _SDL_RenderCopy(_REN, _TEXS[this.tex], &clip, &r);
         end
     end
 end
