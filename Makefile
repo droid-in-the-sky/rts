@@ -1,3 +1,4 @@
+CFLAGS = -D SDL_MATH
 #CFLAGS = -D CEU_DEBUG -D DEBUG0
 #CFLAGS = -DDEBUG -g -O0 -v -da -Q #-pg
 # valgrind --error-limit=no --leak-check=full ./mtg_trader

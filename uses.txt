@@ -29,6 +29,12 @@ class MoveIVisible
     var Range r;
         (Unit: level 1)
 
+    var IVisible& vis;  // what to move
+        (MoveIVisible: level 0)
+
+    var IUnit& unit;    // parent unit
+        (Range: level 0)
+
 ## Pool
 
     pool IVisible[] all;
@@ -87,9 +93,6 @@ class MoveIVisible
     var IUnit* enemy;   // what to follow
         (level 5)
 
-    var IVisible* vis;  // what to move
-        (MoveIVisible: level 0)
-
     var IVisible* oth;  // collision w/ unit?
         (MoveIVisible: level 3)
 
@@ -98,9 +101,6 @@ class MoveIVisible
 
     var IUnit* oth;     // collision with unit
         (Fire: level 2)
-
-    var IUnit* unit;    // parent unit
-        (Range: level 0)
 
     var IUnit* oth;     // collision with unit
         (Range: level 3)

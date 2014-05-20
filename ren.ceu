@@ -1,12 +1,8 @@
 native do
     int REN_W, REN_H;
     SDL_Renderer* REN = NULL;
-    enum {
-        TEX_STORMTROOPER = 0,
-        TEX_YODA,
-        TEX_MAX
-    };
-    SDL_Texture* TEXS[TEX_MAX];
+    SDL_Texture* TEX_STORMTROOPER = NULL;
+    SDL_Texture* TEX_YODA = NULL;
 end
 
 _SDL_GetWindowSize(win, &_REN_W, &_REN_H);
@@ -18,13 +14,13 @@ with
 end
 
 finalize
-    _TEXS[_TEX_STORMTROOPER] = _IMG_LoadTexture(_REN, "imgs/stormtrooper.png");
+    _TEX_STORMTROOPER = _IMG_LoadTexture(_REN, "imgs/stormtrooper.png");
 with
-    _SDL_DestroyTexture(_TEXS[_TEX_STORMTROOPER]);
+    _SDL_DestroyTexture(_TEX_STORMTROOPER);
 end
 
 finalize
-    _TEXS[_TEX_YODA] = _IMG_LoadTexture(_REN, "imgs/yoda.png");
+    _TEX_YODA = _IMG_LoadTexture(_REN, "imgs/yoda.png");
 with
-    _SDL_DestroyTexture(_TEXS[_TEX_YODA]);
+    _SDL_DestroyTexture(_TEX_YODA);
 end

@@ -38,7 +38,7 @@ do
                     _.id     = _VIS_UNIT;
                     _.team   = 1;
                     _.speed  = 100;
-                    _.tex    = _TEX_STORMTROOPER;
+                    _.tex    := _TEX_STORMTROOPER;
                     _.life   =  10;
                     _.damage =   2;
                     _.range  = 100;

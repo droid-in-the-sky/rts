@@ -109,11 +109,11 @@ class Unit with
         var bool      selected?   = 0;
         var IVisible* vis_range   = null;
 
-    var int tex = _TEX_MAX;
+    var _SDL_Texture[] tex = null;
 do
     _assert(this.team   != 0);
     _assert(this.speed  != 0);
-    _assert(this.tex    < _TEX_MAX);
+    _assert(this.tex    != null);
     _assert(this.life   != 0);
     _assert(this.damage != 0);
 
@@ -233,7 +233,7 @@ do
                 r.y = pos.y - 48/2;     // TODO
                 r.w = 32;               // TODO
                 r.h = 48;               // TODO
-            _SDL_RenderCopy(_REN, _TEXS[this.tex], &clip, &r);
+            _SDL_RenderCopy(_REN, this.tex, &clip, &r);
         end
     end
 end
