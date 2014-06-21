@@ -3,6 +3,8 @@
 #include "sdl-gfx.ceu"      // drawing primitives (e.g.  bezierRGBA)
 #include "sdl-colors.ceu"   // most commonly used colors (e.g. colors.white)
 
+#define OBJ_N 100
+
 input void SDL_QUIT;
 input int  SDL_DT;
 input void SDL_REDRAW;
@@ -14,7 +16,7 @@ input _SDL_MouseMotionEvent* SDL_MOUSEMOTION;
 
 var _SDL_Window* win;
     finalize
-        win = _SDL_CreateWindow("War", 500, 400, 1280, 800,
+        win = _SDL_CreateWindow("War", 500, 400, 800, 400,
                                 _SDL_WINDOW_SHOWN);
     with
         _SDL_DestroyWindow(win);
@@ -54,32 +56,55 @@ with
             // this block has the same scope as pool users
 
     // create two initial units
-    spawn Unit in global:p:all with
-        _.id     = _VIS_UNIT;
-        _.team   =   1;
-        _.speed  = 100;
-        _.tex    := _TEX_STORMTROOPER;
-        _.life   =  10;
-        _.damage =   2;
-        _.range  = 100;
-        _.pos.x =   30;
-        _.pos.y =   30;
-        _.rad   =   20;
+    var Unit* u1 = new Unit in global:p:all with
+        this.id     = _VIS_UNIT;
+        this.team   =   1;
+        this.speed  = 50;
+        this.tex    := _TEX_STORMTROOPER;
+        this.life   =  10;
+        this.damage =   2;
+        this.range  = 200;
+        this.pos.x =   30;
+        this.pos.y =   30;
+        this.rad   =   20;
     end;
+/*
     spawn Unit in global:p:all with
-        _.id     = _VIS_UNIT;
-        _.team   =   2;
-        _.speed  =  300;
-        _.tex    := _TEX_YODA;
-        _.life   =  50;
-        _.damage =  10;
-        _.range  =   0;
-        _.pos.x  = 200;
-        _.pos.y  = 200;
-        _.rad    =  20;
+        this.id     = _VIS_UNIT;
+        this.team   =   1;
+        this.speed  = 50;
+        this.tex    := _TEX_STORMTROOPER;
+        this.life   =  10;
+        this.damage =   2;
+        this.range  = 100;
+        this.pos.x =  200;
+        this.pos.y =  200;
+        this.rad   =   20;
+    end;
+*/
+    var Unit* u2 = new Unit in global:p:all with
+        this.id     = _VIS_UNIT;
+        this.team   =   2;
+        this.speed  =  300;
+        this.tex    := _TEX_YODA;
+        this.life   =  5 ;
+        this.damage =  10;
+        this.range  =   0;
+        this.pos.x  = 400;
+        this.pos.y  =  30;
+        this.rad    =  20;
     end;
 
     par do
+/*
+        watching u1 do
+            watching u2 do
+                await 10s;
+                emit u1:go_follow => u2;
+            end
+        end
+    with
+*/
         // COLLISION DETECTION //
         // check collisions among all units every frame
         every SDL_DT do
@@ -96,11 +121,11 @@ with
             end
 
             // TODO NxN (could be NxN/2)
-            loop i in objs_n do
+            loop/OBJ_N i in objs_n do
                 var IVisible* vis1 = objs[i];
                 var int id1   = vis1:id;
                 var int team1 = vis1:team;
-                loop j in objs_n do
+                loop/OBJ_N j in objs_n do
                     var IVisible* vis2 = objs[j];
                     var int id2   = vis2:id;
                     var int team2 = vis2:team;

@@ -38,8 +38,8 @@ do
 
     // move "this" to "to"
     var MoveIVisible move with
-        _.vis = this;
-        _.to  = to;
+        this.vis = outer;
+        this.to  = to;
     end;
 
     par/or do
@@ -80,12 +80,12 @@ do
                 watching oth do
                     await 1s;   // TODO: depend on speed
                     spawn Fire in global:p:all with
-                        _.id    = _VIS_FIRE;
-                        _.team  = team;
-                        _.speed = unit.speed * 3;
-                        _.pos   = pos;
-                        _.to    = oth:pos;
-                        _.damage = unit.damage;
+                        this.id    = _VIS_FIRE;
+                        this.team  = team;
+                        this.speed = unit.speed * 3;
+                        this.pos   = pos;
+                        this.to    = oth:pos;
+                        this.damage = unit.damage;
                     end;
                 end
             end
@@ -118,7 +118,7 @@ do
     _assert(this.damage != 0);
 
     var Range vis_range_ with
-        _.unit = this;
+        this.unit = outer;
     end;
     this.vis_range = &vis_range_;
 
@@ -155,7 +155,7 @@ do
                     await 500ms;   // TODO: depend on speed
                     _Mix_PlayChannel(-1, _SND_SWORD, 0);
                     spawn Fog in global:p:all with
-                        _.pos = oth:pos;
+                        this.pos = oth:pos;
                     end;
                     emit oth:go_hit => this.damage;
                 end
@@ -194,8 +194,8 @@ do
 
                 // move "this" to "*to"
                 var MoveIVisible move with
-                    _.vis = this;
-                    _.to  = to;
+                    this.vis = outer;
+                    this.to  = to;
                 end;
 
                 par/or do
