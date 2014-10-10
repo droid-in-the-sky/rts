@@ -29,11 +29,11 @@ do
 end
 
 interface Global with
-    var int   money;      // player money
-    var Pool* p;
+    var int    money;      // player money
+    var Pool[] p;
 end
-var int   money = 1000;
-var Pool* p     = null;
+var int    money = 1000;
+var Pool[] p     = null;
 
 #include "ren.ceu"
 #include "snd.ceu"
@@ -52,15 +52,15 @@ with
     var  Group group;
     var  Nest  nest;
     var  Pool  p_;
-    global:p := &p_;
-            // this block has the same scope as pool users
+    global:p := &p_;    // all users of "global:p" are in the scope of "p_"
 
     // create two initial units
-    var Unit* u1 = new Unit in global:p:all with
+    //var Unit* u1 = spawn Unit in global:p:all with
+    spawn Unit in global:p:all with
         this.id     = _VIS_UNIT;
         this.team   =   1;
         this.speed  = 50;
-        this.tex    := _TEX_STORMTROOPER;
+        this.tex    = _TEX_STORMTROOPER;
         this.life   =  10;
         this.damage =   2;
         this.range  = 200;
@@ -73,7 +73,7 @@ with
         this.id     = _VIS_UNIT;
         this.team   =   1;
         this.speed  = 50;
-        this.tex    := _TEX_STORMTROOPER;
+        this.tex    = _TEX_STORMTROOPER;
         this.life   =  10;
         this.damage =   2;
         this.range  = 100;
@@ -82,11 +82,12 @@ with
         this.rad   =   20;
     end;
 */
-    var Unit* u2 = new Unit in global:p:all with
+    //var Unit* u2 = spawn Unit in global:p:all with
+    spawn Unit in global:p:all with
         this.id     = _VIS_UNIT;
         this.team   =   2;
         this.speed  =  300;
-        this.tex    := _TEX_YODA;
+        this.tex    = _TEX_YODA;
         this.life   =  5 ;
         this.damage =  10;
         this.range  =   0;
@@ -111,11 +112,11 @@ with
             var IVisible*[100] objs;      // TODO: 100
             var int          objs_n = 0;
             loop (IVisible*)vis in global:p:all do
-                objs[objs_n] := vis;
+                objs[objs_n] = vis;
                 objs_n = objs_n + 1;
                 var IUnit* u = (IUnit*) vis;
                 if u!=null and u:vis_range!=null then
-                    objs[objs_n] := u:vis_range;
+                    objs[objs_n] = u:vis_range;
                     objs_n = objs_n + 1;
                 end
             end
@@ -164,8 +165,7 @@ with
                     var IUnit* enemy = null;
                     loop (IUnit*)u in global:p:all do
                         if u:team==2 and _SDL_Circle_vs_Mouse(&u:pos,u:rad,but) then
-                            enemy := u;    // clicked on enemy, follow it
-                                    // TODO: tight path to enemy use
+                            enemy = u;    // clicked on enemy, follow it
                             break;
                         end
                     end

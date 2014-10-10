@@ -146,9 +146,8 @@ do
         // - perform melee attack after a reaction/performing time
         // - TODO: ignores all but the first colliding org
         loop do
-            var IVisible* vis := await this.go_collide
-                                 until vis:team != this.team;
-                                // := work around "vis" inside await-until
+            var IVisible* vis = await this.go_collide
+                                until vis:team != this.team;
             var IUnit* oth = (IUnit*)vis;
             if oth != null then
                 watching oth do
@@ -164,7 +163,8 @@ do
     with
         // either MOVE (go_point) or FOLLOW (go_follow) //
         var int go? = false;
-        var IVisible* vis = null;
+        var IVisible[] vis = null;
+                    // TODO: should be "*" (but yields "across reaction")
         var _SDL_Point to;
         loop do
 
@@ -176,8 +176,7 @@ do
                 end
             with
                 var IVisible* vis_ = await go_follow;
-                vis := vis_;
-                    // TODO: tight path to "watching vis"
+                vis = vis_;
                 if vis != null then
                     go? = true;
                     to = vis:pos;
@@ -190,6 +189,7 @@ do
 
                 finalize with
                     clip.x = 0;     // always terminate on standing position
+                    vis    = null;  // reset vis
                 end
 
                 // move "this" to "*to"
