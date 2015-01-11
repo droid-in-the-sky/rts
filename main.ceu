@@ -8,7 +8,7 @@
 input void SDL_QUIT;
 input int  SDL_DT;
 input void SDL_REDRAW;
-input _SDL_KeyEvent* SDL_KEYDOWN;
+input _SDL_KeyboardEvent* SDL_KEYDOWN;
 
 input _SDL_MouseButtonEvent* SDL_MOUSEBUTTONDOWN;
 input _SDL_MouseButtonEvent* SDL_MOUSEBUTTONUP;
@@ -21,6 +21,17 @@ var _SDL_Window* win;
     with
         _SDL_DestroyWindow(win);
     end
+
+// Interface shared by all visible objects.
+
+interface IVisible with
+    var   int        id;         // type identifier (e.g. _VIS_YODA)
+    var   int        team;       // team identifier [1,2]
+    var   int        speed;      // speed in px/s
+    var   _SDL_Point pos;        // position (x,y)
+    var   int        rad;        // dimension radix
+    event IVisible*  go_collide; // collided with other "IVisible"
+end
 
 class Pool with
     pool IVisible[] all;

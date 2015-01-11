@@ -29,17 +29,6 @@ native do
     };
 end
 
-// Interface shared by all visible objects.
-
-interface IVisible with
-    var   int        id;         // type identifier (e.g. _VIS_YODA)
-    var   int        team;       // team identifier [1,2]
-    var   int        speed;      // speed in px/s
-    var   _SDL_Point pos;        // position (x,y)
-    var   int        rad;        // dimension radix
-    event IVisible*  go_collide; // collided with other "IVisible"
-end
-
 // Moves a given "vis" object:
 //      - moves until it collides or reaches the destination
 //      - emits "ok" in either case
