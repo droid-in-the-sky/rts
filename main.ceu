@@ -41,10 +41,10 @@ end
 
 interface Global with
     var int    money;      // player money
-    var Pool[] p;
+    var Pool* p;
 end
 var int    money = 1000;
-var Pool[] p     = null;
+var Pool* p     = null;
 
 #include "ren.ceu"
 #include "snd.ceu"
