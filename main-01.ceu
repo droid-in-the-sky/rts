@@ -81,45 +81,57 @@ with
         this.pos.y =  200;
         this.rad   =   20;
     end;
-*/
     var Unit* u2 = new Unit in global:p:all with
         this.id     = _VIS_UNIT;
         this.team   =   2;
         this.speed  =  300;
         this.tex    := _TEX_YODA;
-        this.life   =  99999;
-        this.damage = 99999;
+        this.life   =  5 ;
+        this.damage =  10;
         this.range  =   0;
-        this.pos.x  = 300;
-        this.pos.y  = 200;
+        this.pos.x  = 400;
+        this.pos.y  =  30;
         this.rad    =  20;
     end;
+*/
+
+    var Unit u1 with
+        this.id     = _VIS_UNIT;
+        this.team   =   1;
+        this.speed  = 50;
+        this.tex    := _TEX_STORMTROOPER;
+        this.life   =  10;
+        this.damage =   2;
+        this.range  = 200;
+        this.pos.x =   50;
+        this.pos.y =   50;
+        this.rad   =   20;
+    end;
+
+    var Unit u2 with
+        this.id     = _VIS_UNIT;
+        this.team   =   1;
+        this.speed  = 50;
+        this.tex    := _TEX_STORMTROOPER;
+        this.life   =  10;
+        this.damage =   2;
+        this.range  = 200;
+        this.pos.x =   10;
+        this.pos.y =   10;
+        this.rad   =   20;
+    end;
+
+    await 1s;
+    var _SDL_Point p1;
+        p1.x = 200;
+        p1.y = 200;
+    var _SDL_Point p2;
+        p2.x = 100;
+        p2.y = 300;
+    emit u1.go_point => &p1;
+    emit u2.go_point => &p2;
 
     par do
-        loop do
-            await 2s;
-            var Unit* u = new Unit in global:p:all with
-                this.id     = _VIS_UNIT;
-                this.team   =   1;
-                this.speed  = 50;
-                this.tex    := _TEX_STORMTROOPER;
-                this.life   =  10;
-                this.damage =   2;
-                this.range  = 200;
-                this.pos.x =   50;
-                this.pos.y =   50;
-                this.rad   =   20;
-            end;
-            watching u do
-                await 100ms;
-                var _SDL_Point p;
-                    p.x = 50 + _rand()%600;
-                    p.y = 50 + _rand()%400;
-                emit u:go_point => &p;
-            end
-        end
-    with
-
 /*
         watching u1 do
             watching u2 do
@@ -179,9 +191,8 @@ with
             // right click: activate nest or move selected units
             if but:button == _SDL_BUTTON_RIGHT then
                 // activate nest
-                if false then
-                //if _SDL_Circle_vs_Mouse(&nest.pos, nest.rad, but) then
-                    //emit nest.go_build;
+                if _SDL_Circle_vs_Mouse(&nest.pos, nest.rad, but) then
+                    emit nest.go_build;
 
                 // move selected units
                 else
