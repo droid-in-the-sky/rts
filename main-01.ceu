@@ -22,6 +22,17 @@ var _SDL_Window* win;
         _SDL_DestroyWindow(win);
     end
 
+// Interface shared by all visible objects.
+
+interface IVisible with
+    var   int        id;         // type identifier (e.g. _VIS_YODA)
+    var   int        team;       // team identifier [1,2]
+    var   int        speed;      // speed in px/s
+    var   _SDL_Point pos;        // position (x,y)
+    var   int        rad;        // dimension radix
+    event IVisible*  go_collide; // collided with other "IVisible"
+end
+
 class Pool with
     pool IVisible[] all;
 do
@@ -39,7 +50,6 @@ var Pool* p     = null;
 #include "snd.ceu"
 #include "visible.ceu"
 #include "unit.ceu"
-#include "nest.ceu"
 #include "group.ceu"
 
 par/or do
@@ -50,7 +60,6 @@ par/or do
     end
 with
     var  Group group;
-    //var  Nest  nest;
     var  Pool  p_;
     global:p := &p_;
             // this block has the same scope as pool users
@@ -191,8 +200,7 @@ with
             // right click: activate nest or move selected units
             if but:button == _SDL_BUTTON_RIGHT then
                 // activate nest
-                if _SDL_Circle_vs_Mouse(&nest.pos, nest.rad, but) then
-                    emit nest.go_build;
+                if false then
 
                 // move selected units
                 else

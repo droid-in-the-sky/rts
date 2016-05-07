@@ -109,7 +109,7 @@ class Unit with
         var bool      selected?   = 0;
         var IVisible* vis_range   = null;
 
-    var _SDL_Texture& tex;
+    var _SDL_Texture[] tex;
 do
     _assert(this.team   != 0);
     _assert(this.speed  != 0);
@@ -141,9 +141,15 @@ do
         end
         await 100ms;    // last breath
     with
+#ifdef MAIN03
+        await 5s;
+    with
+#endif
         // VISIBLE COLLISION (go_collide):
         // - perform melee attack after a reaction/performing time
         // - TODO: ignores all but the first colliding org
+await FOREVER;
+#if 0
         loop do
             var IVisible* vis = await this.go_collide
                                 until vis:team != this.team;
@@ -159,10 +165,11 @@ do
                 end
             end
         end
+#endif
     with
         // either MOVE (go_point) or FOLLOW (go_follow) //
         var int go? = false;
-        var IVisible* vis = null;
+        var IVisible[] vis = null;
                     // TODO: should be "*" (but yields "across reaction")
         var _SDL_Point to;
         loop do
@@ -232,7 +239,7 @@ do
                 r.y = pos.y - 48/2;     // TODO
                 r.w = 32;               // TODO
                 r.h = 48;               // TODO
-            _SDL_RenderCopy(_REN, &this.tex, &clip, &r);
+            _SDL_RenderCopy(_REN, this.tex, &clip, &r);
         end
     end
 end

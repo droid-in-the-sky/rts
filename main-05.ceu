@@ -50,6 +50,7 @@ var Pool* p     = null;
 #include "snd.ceu"
 #include "visible.ceu"
 #include "unit.ceu"
+//#include "nest.ceu"
 #include "group.ceu"
 
 par/or do
@@ -60,6 +61,7 @@ par/or do
     end
 with
     var  Group group;
+    //var  Nest  nest;
     var  Pool  p_;
     global:p := &p_;
             // this block has the same scope as pool users
@@ -90,44 +92,73 @@ with
         this.pos.y =  200;
         this.rad   =   20;
     end;
-    var Unit* u2 = new Unit in global:p:all with
+*/
+    var Unit yoda with
         this.id     = _VIS_UNIT;
         this.team   =   2;
         this.speed  =  300;
         this.tex    := _TEX_YODA;
-        this.life   =  5 ;
-        this.damage =  10;
+        this.life   =  99999;
+        this.damage = 99999;
         this.range  =   0;
-        this.pos.x  = 400;
-        this.pos.y  =  30;
+        this.pos.x  = 300;
+        this.pos.y  = 200;
         this.rad    =  20;
     end;
-*/
 
-    loop do
-        await 2s;
-        var Unit* u = new Unit in global:p:all with
-            this.id     = _VIS_UNIT;
-            this.team   =   1;
-            this.speed  = 50;
-            this.tex    := _TEX_STORMTROOPER;
-            this.life   =  10;
-            this.damage =   2;
-            this.range  = 200;
-            this.pos.x =   50;
-            this.pos.y =   50;
-            this.rad   =   20;
-        end;
-        watching u do
-            await 100ms;
-            var _SDL_Point p;
-                p.x = 50 + _rand()%600;
-                p.y = 50 + _rand()%400;
-            emit u:go_point => &p;
-        end
-    end
+    var int rad = 0;
 
     par do
+        par do
+            every 500ms do
+                var _SDL_Point p;
+                    p.x = 50 + _rand()%600;
+                    p.y = 50 + _rand()%400;
+                emit yoda.go_point => &p;
+            end
+        with
+            loop do
+                rad = 0;
+                await SDL_KEYDOWN;
+                par/or do
+                    await 200ms;
+                with
+                    every 30ms do
+                        rad = rad + 40;
+                    end
+                with
+                    every SDL_REDRAW do
+                        _filledCircleRGBA(_REN, yoda.pos.x,yoda.pos.y,rad,
+                                                0xFF,0x00,0x00,0xFF);
+                    end
+                end
+            end
+        end
+    with
+        loop do
+            await 1s;
+            var Unit* u = new Unit in global:p:all with
+                this.id     = _VIS_UNIT;
+                this.team   =   1;
+                this.speed  = 50;
+                this.tex    := _TEX_STORMTROOPER;
+                this.life   =  10;
+                this.damage =   2;
+                this.range  = 200;
+                this.pos.x =   50;
+                this.pos.y =   50;
+                this.rad   =   20;
+            end;
+            watching u do
+                await 100ms;
+                var _SDL_Point p;
+                    p.x = 50 + _rand()%600;
+                    p.y = 50 + _rand()%400;
+                emit u:go_point => &p;
+            end
+        end
+    with
+
 /*
         watching u1 do
             watching u2 do
@@ -142,6 +173,8 @@ with
         every SDL_DT do
             var IVisible*[100] objs;      // TODO: 100
             var int          objs_n = 0;
+            objs[0] = &yoda;
+            objs_n = objs_n + 1;
             loop (IVisible*)vis in global:p:all do
                 objs[objs_n] := vis;
                 objs_n = objs_n + 1;
@@ -171,10 +204,20 @@ with
                     if team1==team2 and (not (col&_COL_FRIEND)) then
                         continue;   // skip same team and FRIEND flag is off
                     end
+                    if id1==id2 then
+                        continue;
+                    end
                     if _SDL_Circle_vs_Circle(&vis1:pos,vis1:rad,&vis2:pos,vis2:rad) then
                         // TODO: single vis collision (aXb not aXc)
                         emit vis1:go_collide => vis2;
                         emit vis2:go_collide => vis1;
+                    end
+                end
+                if team1==1 and 
+                    _SDL_Circle_vs_Circle(&vis1:pos,vis1:rad,&yoda.pos,rad) then
+                    var IUnit* oth = (IUnit*) vis1;
+                    if oth != null then
+                        emit oth:go_hit => 100;
                     end
                 end
             end
